@@ -111,6 +111,8 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 .btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink);cursor:pointer}
 #out{width:100%;min-height:160px;font:300 .8rem var(--body);border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink)}
 .tiny{font-size:.72rem;color:var(--muted)}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:.8rem;color:var(--muted);line-height:1.6}
+.agree input{margin-top:4px;accent-color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -206,18 +208,19 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 <section class="step" aria-labelledby="h5s">
   <span class="no">05</span>
   <h2 id="h5s">私訊我，幫你算</h2>
-  <p class="sub">填好後按「複製我的結果」，再到 IG 私訊貼給我。我會幫你排定期定額的標的比例，也一起看保單缺口。</p>
+  <p class="sub">填好後按「送出給蕎蕎」，我會在 IG 私訊你，幫你排定期定額的標的比例，也一起看保單缺口。</p>
   <form class="box" id="lead" novalidate>
     <div class="f"><label for="nm">怎麼稱呼你</label><div class="in"><input id="nm" autocomplete="name" placeholder="例如：小美"></div></div>
     <div class="f"><label for="ig">你的 IG 帳號</label><div class="in"><span>@</span><input id="ig" autocomplete="off" placeholder="your_ig"></div></div>
     <div class="f"><label for="age">年齡</label><div class="in"><input id="age" inputmode="numeric" placeholder="例如：28"></div></div>
     <div class="f"><label for="msg">想問我什麼（可不填）</label><div class="in"><input id="msg" placeholder="例如：想存買房頭期款"></div></div>
-    <button type="submit" class="btn dark">複製我的結果</button>
+    <label class="agree"><input type="checkbox" id="agree"> 我同意蕎蕎用這些資料在 IG 聯絡我、幫我做規劃</label>
+    <div class="pills"><button type="submit" class="btn dark" id="sendBtn">送出給蕎蕎</button><button type="button" class="btn" id="copyBtn">只複製結果</button></div>
     <p class="note" id="copied" aria-live="polite"></p>
     <textarea id="out" readonly hidden></textarea>
   </form>
   <a class="btn" href="https://www.instagram.com/229ciaooo/" target="_blank" rel="noopener">到 IG 私訊 @229ciaooo</a>
-  <p class="tiny">資料只會出現在你複製的文字裡，網頁不會儲存或送出。私訊給我的資料只用來幫你做理財規劃。</p>
+  <p class="tiny">按送出後，你填的資料和試算結果會傳給蕎蕎，只用來聯絡你和幫你做理財規劃，不會提供給其他人。</p>
 </section>
 
 <footer>試算採固定年化報酬與每月複利，僅供理財規劃參考，不代表任何商品的未來績效。投資一定有風險，基金投資有賺有賠，申購前請詳閱公開說明書。保險商品內容以各保險公司條款為準。</footer>
@@ -283,8 +286,7 @@ $("quiz").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)
 document.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{months=+b.dataset.m;document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));step1();}));
 money($("income"),()=>{step1();step2();});money($("saved"),step1);money($("dca"),()=>{dcaTouched=true;step2();});
 ["yrs","rate"].forEach(id=>$(id).addEventListener("input",step2));
-$("lead").addEventListener("submit",async e=>{
-  e.preventDefault();
+function buildCalc(){
   const v=id=>$(id).value.trim(), inc=val($("income")), pm=val($("dca")), yr=+$("yrs").value, r=+$("rate").value/100;
   const a=fv(pm,yr,r), lab={y:"有",n:"沒有",u:"不確定"};
   const lines=["【資產配置計算機｜我的結果】",
@@ -295,9 +297,23 @@ $("lead").addEventListener("submit",async e=>{
     "保單快篩："+QS.map((q,i)=>`${q[2]} ${lab[ans[i]]||"未答"}`).join("、"),
     v("msg")?`想問：${v("msg")}`:""].filter(Boolean);
   const text=lines.join("\n");
-  try{await navigator.clipboard.writeText(text);$("copied").textContent="已複製！到 IG 私訊貼給我就可以。";$("out").hidden=true;}
-  catch(err){$("out").hidden=false;$("out").value=text;$("out").select();$("copied").textContent="這個瀏覽器不能自動複製，請長按下面的文字全選複製。";}
-});
+  return {text,data:{inc,months,saved:val($("saved")),dca:pm,years:yr,rate:+$("rate").value,quiz:QS.map((q,i)=>[q[2],lab[ans[i]]||"未答"])}};}
+async function copyOnly(){const {text}=buildCalc();try{await navigator.clipboard.writeText(text);$("copied").textContent="已複製！到 IG 私訊貼給我就可以。";$("out").hidden=true;}catch(err){$("out").hidden=false;$("out").value=text;$("out").select();$("copied").textContent="這個瀏覽器不能自動複製，請長按下面的文字全選複製。";}}
+const SB_URL="https://zefgdogfbfiqyvxdcnvs.supabase.co",SB_KEY="sb_publishable_DUd4I3iTYi165too1Go3Ww_QGTJtX7z";
+async function sendLead(row){const r=await fetch(SB_URL+"/rest/v1/ig_leads",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)});if(!r.ok)throw new Error("HTTP "+r.status);}
+let sent=false;
+async function submitLead(page,text,extra){
+  const st=$("copied"),v=id=>($(id)?$(id).value.trim():"");
+  if(!v("nm")||!v("ig")){st.textContent="請填稱呼和 IG 帳號，我才找得到你。";return;}
+  if(!$("agree").checked){st.textContent="請勾選同意，我才能聯絡你。";return;}
+  if(sent){st.textContent="已經送出囉！我會在 IG 私訊你。";return;}
+  const b=$("sendBtn");b.disabled=true;b.textContent="送出中…";
+  try{await sendLead(Object.assign({page,name:v("nm").slice(0,50),ig:v("ig").replace(/^@/,"").slice(0,60),message:v("msg").slice(0,300),summary:text.slice(0,3000)},extra));
+    sent=true;b.textContent="已送出 ✓";st.innerHTML="收到了！我會在 IG 私訊你 <strong>@"+v("ig").replace(/^@/,"")+"</strong>。想快一點，也可以直接私訊我。";}
+  catch(err){b.disabled=false;b.textContent="送出給蕎蕎";st.textContent="送出失敗，請按「只複製結果」再到 IG 私訊我。";}
+}
+$("lead").addEventListener("submit",e=>{e.preventDefault();const {text,data}=buildCalc();submitLead("calc",text,{age:$("age").value.trim().slice(0,10),data});});
+$("copyBtn").addEventListener("click",copyOnly);
 step1();step2();quiz();
 </script>
 </body>

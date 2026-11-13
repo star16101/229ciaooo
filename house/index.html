@@ -111,6 +111,8 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 .btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink);cursor:pointer}
 #out{width:100%;min-height:160px;font:300 .8rem var(--body);border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink)}
 .tiny{font-size:.72rem;color:var(--muted)}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:.8rem;color:var(--muted);line-height:1.6}
+.agree input{margin-top:4px;accent-color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -199,18 +201,19 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 <section class="step" aria-labelledby="h5s">
   <span class="no">05</span>
   <h2 id="h5s">私訊我，幫你看</h2>
-  <p class="sub">填好後按「複製我的結果」，再到 IG 私訊貼給我。</p>
+  <p class="sub">填好後按「送出給蕎蕎」，我會在 IG 私訊你，幫你看看有沒有更輕鬆的繳法。</p>
   <form class="box" id="lead" novalidate>
     <div class="f"><label for="nm">怎麼稱呼你</label><div class="in"><input id="nm" autocomplete="name" placeholder="例如：小美"></div></div>
     <div class="f"><label for="ig">你的 IG 帳號</label><div class="in"><span>@</span><input id="ig" autocomplete="off" placeholder="your_ig"></div></div>
     <div class="f"><label for="city">房子在哪個縣市、哪一區</label><div class="in"><input id="city" placeholder="例如：高雄市鼓山區"></div></div>
     <div class="f"><label for="msg">最想解決什麼（可不填）</label><div class="in"><input id="msg" placeholder="例如：每月繳太重、想裝修"></div></div>
-    <button type="submit" class="btn dark">複製我的結果</button>
+    <label class="agree"><input type="checkbox" id="agree"> 我同意蕎蕎用這些資料在 IG 聯絡我、幫我做規劃</label>
+    <div class="pills"><button type="submit" class="btn dark" id="sendBtn">送出給蕎蕎</button><button type="button" class="btn" id="copyBtn">只複製結果</button></div>
     <p class="note" id="copied" aria-live="polite"></p>
     <textarea id="out" readonly hidden></textarea>
   </form>
   <a class="btn" href="https://www.instagram.com/229ciaooo/" target="_blank" rel="noopener">到 IG 私訊 @229ciaooo</a>
-  <p class="tiny">資料只會出現在你複製的文字裡，網頁不會儲存或送出。私訊給我的資料只用來幫你做財務規劃。</p>
+  <p class="tiny">按送出後，你填的資料和試算結果會傳給蕎蕎，只用來聯絡你和幫你做財務規劃，不會提供給其他人。</p>
 </section>
 
 <footer>試算採本息平均攤還，僅供參考。拉長還款年限可以降低每月負擔，但總利息可能增加；實際利率、額度與年限以銀行核貸結果為準。借款前請評估自己的還款能力。</footer>
@@ -262,7 +265,21 @@ function buildText(){const r=calc(),v=id=>$(id).value.trim();
 async function doCopy(msgId){const text=buildText();
   try{await navigator.clipboard.writeText(text);$(msgId).textContent="已複製！到 IG 私訊貼給我就可以。";$("out").hidden=true;}
   catch(err){$("out").hidden=false;$("out").value=text;$("out").select();$(msgId).textContent="這個瀏覽器不能自動複製，請到最下面長按文字全選複製。";}}
-$("lead").addEventListener("submit",e=>{e.preventDefault();doCopy("copied");});
+const SB_URL="https://zefgdogfbfiqyvxdcnvs.supabase.co",SB_KEY="sb_publishable_DUd4I3iTYi165too1Go3Ww_QGTJtX7z";
+async function sendLead(row){const r=await fetch(SB_URL+"/rest/v1/ig_leads",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)});if(!r.ok)throw new Error("HTTP "+r.status);}
+let sent=false;
+async function submitLead(page,text,extra){
+  const st=$("copied"),v=id=>($(id)?$(id).value.trim():"");
+  if(!v("nm")||!v("ig")){st.textContent="請填稱呼和 IG 帳號，我才找得到你。";return;}
+  if(!$("agree").checked){st.textContent="請勾選同意，我才能聯絡你。";return;}
+  if(sent){st.textContent="已經送出囉！我會在 IG 私訊你。";return;}
+  const b=$("sendBtn");b.disabled=true;b.textContent="送出中…";
+  try{await sendLead(Object.assign({page,name:v("nm").slice(0,50),ig:v("ig").replace(/^@/,"").slice(0,60),message:v("msg").slice(0,300),summary:text.slice(0,3000)},extra));
+    sent=true;b.textContent="已送出 ✓";st.innerHTML="收到了！我會在 IG 私訊你 <strong>@"+v("ig").replace(/^@/,"")+"</strong>。想快一點，也可以直接私訊我。";}
+  catch(err){b.disabled=false;b.textContent="送出給蕎蕎";st.textContent="送出失敗，請按「只複製結果」再到 IG 私訊我。";}
+}
+$("lead").addEventListener("submit",e=>{e.preventDefault();const r=calc();submitLead("house",buildText(),{city:$("city").value.trim().slice(0,60),data:{survey:sv,mortgage:r.mb,rate:r.mr,years:r.my,income:r.inc,monthly:Math.round(r.all),ratio:Math.round(r.ratio*100),newMonthly:Math.round(r.np),newYears:r.ny,newRate:r.nr}});});
+$("copyBtn").addEventListener("click",()=>doCopy("copied"));
 $("copy2").addEventListener("click",()=>doCopy("copied2"));
 survey();calc();
 
