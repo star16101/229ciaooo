@@ -208,94 +208,90 @@
   .loading{text-align:center;padding:60px 20px;color:var(--ink-soft);}
   .hint{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.6;}
 
-  /* ===== 像素遊戲風 ===== */
+  /* ===== 新東方美學 ===== */
   :root{
-    --bg:#BFE3F5;
-    --surface:#FFFBEA;
-    --surface-2:#E8F3D6;
-    --ink:#232B52;
-    --ink-soft:#5F6A8F;
-    --accent:#F2B93B;
-    --accent-deep:#232B52;
-    --accent-ink:#232B52;
-    --accent-soft:#FFE9A8;
-    --rose:#E0574F;
-    --rose-soft:#FBD9D4;
-    --sage:#3E8E4F;
-    --sage-soft:#D4EFC4;
-    --border:#232B52;
-    --danger:#D9473F;
-    --danger-soft:#FBD9D4;
-    --radius:0px;
-    --radius-sm:0px;
-    --px:#232B52;
-    --shadow:4px 4px 0 #232B52;
+    --bg:#F3F1EA;
+    --surface:#FBFAF6;
+    --surface-2:#E9E8DF;
+    --ink:#22332C;
+    --ink-soft:#7B857E;
+    --accent:#2F4A3F;
+    --accent-deep:#223A31;
+    --accent-ink:#2F4A3F;
+    --accent-soft:#DFE6DC;
+    --rose:#B5483C;
+    --rose-soft:#F1DDD8;
+    --sage:#6E8F7B;
+    --sage-soft:#DFE8DF;
+    --border:#DAD8CC;
+    --danger:#A5483C;
+    --danger-soft:#F2E1DC;
+    --radius:6px;
+    --radius-sm:4px;
+    --shadow:0 1px 2px rgba(34,51,44,.05), 0 10px 28px rgba(34,51,44,.06);
   }
-  html,body{
-    background-color:var(--bg);
-    background-image:
-      linear-gradient(180deg,#8FD0F2 0,#BFE3F5 240px,#BFE3F5 100%);
-    background-attachment:fixed;
-  }
-  .topbar{background:#FFFBEA;border-bottom:3px solid var(--px);}
-  .brand .title{font-size:22px;letter-spacing:1px;color:var(--px);}
-  .brand .sub{font-size:12px;}
-  .island-emoji{animation:pxFloat 1s steps(2,end) infinite;}
-  @keyframes pxFloat{0%{transform:translateY(0)}50%{transform:translateY(-4px)}100%{transform:translateY(0)}}
-  .icon-btn{border:2px solid var(--px);border-radius:0;box-shadow:2px 2px 0 var(--px);background:#fff;color:var(--px);}
-  .icon-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--px);}
-  .back-btn{color:var(--px);font-size:15px;}
+  html,body{background:var(--bg);background-image:none;}
+  .topbar{background:rgba(243,241,234,.92);border-bottom:1px solid var(--border);}
+  .brand .title{color:var(--accent);font-size:22px;letter-spacing:2px;}
+  .island-emoji{animation:islandFloat 3.2s ease-in-out infinite;}
+  .icon-btn{border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink-soft);box-shadow:none;}
+  .back-btn{color:var(--accent);}
 
-  .card{border:3px solid var(--px);border-radius:0;box-shadow:4px 4px 0 var(--px);background:var(--surface);}
-  .card.tap:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--px);}
-  .policy-card .insurer{color:var(--sage);font-size:13px;}
-  .tag{border:2px solid var(--px);border-radius:0;background:#fff;color:var(--px);padding:3px 8px;}
-  .tag.accent{background:var(--accent-soft);color:var(--px);}
-  .item-line,.rider-row{border-bottom:2px dotted #A9B3D0;}
-  .item-line .amount{color:#B5362F;font-weight:700;}
+  .card{border:1px solid var(--border);border-radius:6px;box-shadow:var(--shadow);background:var(--surface);}
+  .card.tap:active{transform:scale(.985);}
+  .policy-card .insurer{color:var(--sage);letter-spacing:1px;}
+  .policy-card{border-left:3px solid var(--accent);}
+  .tag{border:none;border-radius:3px;background:var(--surface-2);color:var(--ink-soft);}
+  .tag.accent{background:var(--accent-soft);color:var(--accent);}
+  .item-line,.rider-row{border-bottom:1px solid #E4E2D8;}
+  .item-line .amount{color:var(--accent);font-weight:700;}
   .rider-row .rider-tags{color:var(--sage);}
 
-  .field input,.field select,.field textarea{border:3px solid var(--px);border-radius:0;background:#fff;box-shadow:inset 3px 3px 0 rgba(35,43,82,.08);}
-  .field input:focus,.field select:focus,.field textarea:focus{border-color:#E0574F;box-shadow:inset 3px 3px 0 rgba(35,43,82,.08);}
-  .field input[type=date]{border-radius:0;}
+  .field input,.field select,.field textarea{border:1px solid var(--border);border-radius:4px;background:var(--surface);box-shadow:none;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,74,63,.12);}
 
-  .btn{border:3px solid var(--px);border-radius:0;letter-spacing:2px;font-size:16px;transition:none;}
-  .btn-primary{background:var(--accent);color:var(--px);box-shadow:4px 4px 0 var(--px);}
-  .btn-primary:active{background:#E3A82A;box-shadow:0 0 0 var(--px);transform:translate(4px,4px);}
-  .btn-secondary{background:#fff;color:var(--px);box-shadow:4px 4px 0 var(--px);}
-  .btn-sage{background:#7ED16A;color:var(--px);box-shadow:4px 4px 0 var(--px);}
-  .btn-danger{background:var(--danger);color:#fff;box-shadow:4px 4px 0 var(--px);}
-  .btn-ghost{background:#fff;color:var(--px);box-shadow:3px 3px 0 var(--px);}
-  .btn:active{transform:translate(3px,3px);}
-  .btn-ghost:active,.btn-secondary:active,.btn-sage:active,.btn-danger:active{box-shadow:0 0 0 var(--px);}
-  .btn-sm{border-radius:0;font-size:14px;padding:8px 12px;}
+  .btn{border:1px solid transparent;border-radius:4px;letter-spacing:3px;font-size:15px;transition:background .15s,transform .1s;}
+  .btn-primary{background:var(--accent);color:#F3F1EA;box-shadow:none;}
+  .btn-primary:active{background:var(--accent-deep);box-shadow:none;transform:scale(.99);}
+  .btn-secondary{background:var(--surface);color:var(--accent);border-color:var(--accent);box-shadow:none;}
+  .btn-sage{background:var(--sage);color:#fff;box-shadow:none;}
+  .btn-danger{background:var(--danger);color:#fff;box-shadow:none;}
+  .btn-ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);box-shadow:none;}
+  .btn:active{transform:scale(.99);}
+  .btn-sm{border-radius:4px;}
 
-  .tabs{background:var(--px);padding:4px;gap:4px;border-radius:0;border:3px solid var(--px);}
-  .tab{border-radius:0;background:#3A4577;color:#BFC8EA;letter-spacing:2px;font-size:15px;}
-  .tab.active{background:var(--accent);color:var(--px);box-shadow:none;}
+  .tabs{background:transparent;border:none;border-bottom:1px solid var(--border);padding:0;gap:0;border-radius:0;margin-bottom:22px;}
+  .tab{background:transparent;color:var(--ink-soft);border-radius:0;padding:12px 4px;letter-spacing:3px;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab.active{background:transparent;color:var(--accent);border-bottom-color:var(--accent);box-shadow:none;}
 
-  .section-title{color:var(--px);font-size:17px;letter-spacing:2px;}
-  .section-title::before{content:'▶ ';color:#E0574F;}
+  .section-title{display:flex;align-items:center;gap:12px;color:var(--accent);font-size:17px;letter-spacing:3px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
 
-  .msg{border:3px solid var(--px);border-radius:0;}
-  .msg-ok{background:var(--sage-soft);color:var(--px);}
-  .msg-error{background:var(--danger-soft);color:#8E2620;}
+  .msg{border:none;border-radius:4px;}
+  .msg-ok{background:var(--sage-soft);color:#2F4A3F;}
+  .fab{border:none;border-radius:50%;background:var(--accent);color:#F3F1EA;box-shadow:0 8px 20px rgba(34,51,44,.28);font-weight:300;}
+  .fab:active{transform:scale(.95);box-shadow:0 3px 8px rgba(34,51,44,.28);}
+  .modal{background:var(--bg);border:none;border-radius:14px 14px 0 0;}
+  .modal-handle{background:var(--border);border-radius:2px;height:4px;}
+  .modal-backdrop{background:rgba(34,51,44,.45);}
+  .add-item-btn{border:1px dashed #B9BDB1;border-radius:4px;background:transparent;color:var(--ink-soft);}
+  .paste-box{border:1px dashed #A9B8AC;border-radius:6px;background:var(--accent-soft);}
+  .draft-card{border:1px solid var(--border);border-radius:6px;background:var(--surface);}
+  .invite-box{border:none;border-radius:6px;background:var(--sage-soft);color:var(--accent);}
+  .invite-code{color:var(--accent);}
+  .client-row{border-bottom:1px solid #E4E2D8;}
 
-  .fab{border:3px solid var(--px);border-radius:0;background:var(--accent);color:var(--px);box-shadow:4px 4px 0 var(--px);font-weight:700;}
-  .fab:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--px);}
-
-  .modal{background:var(--surface);border:3px solid var(--px);border-bottom:none;border-radius:0;}
-  .modal-handle{background:var(--px);border-radius:0;height:5px;}
-  .modal-backdrop{background:rgba(35,43,82,.55);}
-  .item-row .rm{color:var(--danger);font-weight:700;}
-  .add-item-btn{border:3px dashed var(--px);border-radius:0;color:var(--px);background:#fff;}
-  .paste-box{border:3px dashed var(--px);border-radius:0;background:var(--accent-soft);}
-  .draft-card{border:3px solid var(--px);border-radius:0;background:#fff;}
-  .invite-box{border:3px solid var(--px);border-radius:0;background:var(--sage-soft);color:var(--px);}
-  .invite-code{color:#B5362F;}
-  .client-row{border-bottom:2px dotted #A9B3D0;}
-  .chevron{color:var(--px);}
-  .link-muted{color:var(--ink-soft);}
+  /* 插畫與印章 */
+  .illus{display:block;width:100%;height:auto;}
+  .hero{margin:-4px -20px 18px;position:relative;}
+  .hero .seal{position:absolute;right:26px;bottom:14px;}
+  .seal{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;background:var(--rose);color:#F8EDE9;border-radius:3px;
+    font-family:'JinXuan','Noto Serif TC',serif;font-size:11px;line-height:1.05;letter-spacing:0;
+    writing-mode:vertical-rl;text-orientation:upright;padding:2px;
+  }
+  .empty .illus{width:140px;margin:0 auto 10px;}
 </style>
 </head>
 <body>
@@ -436,6 +432,36 @@ async function loadClientHomeData(){
 }
 
 // ---------- helpers ----------
+
+// ---------- 扁平插畫 ----------
+const ILLUS_HERO = `<svg class="illus" viewBox="0 0 360 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="268" cy="52" r="22" fill="#D9A08A" opacity=".55"/>
+  <path d="M0 96 L46 58 L84 88 L128 46 L182 98 L226 70 L282 100 L324 64 L360 92 L360 150 L0 150Z" fill="#CBD6CB"/>
+  <path d="M0 112 L52 84 L98 108 L152 76 L214 114 L262 92 L320 116 L360 100 L360 150 L0 150Z" fill="#A9BCAE"/>
+  <path d="M0 130 Q90 106 180 126 T360 120 L360 150 L0 150Z" fill="#7F9A8A"/>
+  <g transform="translate(58 98)">
+    <ellipse cx="22" cy="30" rx="30" ry="7" fill="#C9B391"/>
+    <path d="M22 28 C22 14 21 6 24 -6" stroke="#6B5B45" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M24 -6 C12 -12 4 -8 -2 -2 C8 -6 14 -4 24 -6Z" fill="#4E7A63"/>
+    <path d="M24 -6 C34 -14 44 -10 50 -2 C40 -6 34 -4 24 -6Z" fill="#5F8C73"/>
+    <path d="M24 -6 C20 -18 28 -24 34 -22 C30 -18 28 -12 24 -6Z" fill="#6E9A82"/>
+  </g>
+  <g transform="translate(236 118)">
+    <path d="M0 8 L52 8 L44 18 L8 18Z" fill="#2F4A3F"/>
+    <path d="M26 8 L26 -22 L46 6Z" fill="#F3F1EA"/>
+    <path d="M24 8 L24 -14 L10 6Z" fill="#DDE4DA"/>
+  </g>
+  <path d="M0 140 H360" stroke="#F3F1EA" stroke-opacity=".35" stroke-width="1"/>
+</svg>`;
+const ILLUS_EMPTY = `<svg class="illus" viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <ellipse cx="70" cy="86" rx="46" ry="6" fill="#E4E2D8"/>
+  <path d="M34 50 H106 C106 72 92 84 70 84 C48 84 34 72 34 50Z" fill="#8FA597"/>
+  <path d="M34 50 H106" stroke="#6E8F7B" stroke-width="3"/>
+  <path d="M70 46 C70 30 66 20 74 8" stroke="#6B5B45" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M74 8 C62 4 54 10 52 18 C62 12 68 12 74 8Z" fill="#4E7A63"/>
+  <path d="M74 8 C84 0 96 4 98 12 C88 8 80 8 74 8Z" fill="#6E9A82"/>
+</svg>`;
+
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function genPassword(){ return Math.random().toString(36).slice(-6) + Math.random().toString(36).slice(-2).toUpperCase(); }
 
@@ -754,6 +780,7 @@ function renderLogin(){
   app.innerHTML = `
     <div class="topbar"><div class="brand"><div class="title serif"><span class="island-emoji">🏝️</span>島嶼團隊出品</div><div class="sub">保單彙整・一目瞭然 By 蕎蕎</div></div></div>
     <div class="content">
+      <div class="hero">${ILLUS_HERO}<span class="seal">島嶼</span></div>
       <div class="tabs">
         <div class="tab ${state.authTab==='client'?'active':''}" data-tab="client">客戶登入</div>
         <div class="tab ${state.authTab==='admin'?'active':''}" data-tab="admin">業務登入</div>
@@ -891,7 +918,7 @@ function renderAdminHome(){
         <input id="client-search" placeholder="搜尋客戶姓名" value="${esc(state.clientSearch||'')}">
       </div>
       <div class="card" style="padding:6px 14px;">
-        ${sorted.length===0 ? `<div class="empty">${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
+        ${sorted.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
           sorted.map(c=>`
             <div class="client-row" data-id="${c.id}">
               <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單</div></div>
@@ -1209,7 +1236,7 @@ function renderAdminClient(){
 
       <div class="section-title">保單列表</div>
       <div class="hint" style="margin-top:-6px;margin-bottom:14px;">點卡片進入該保單，可看附約與保障內容</div>
-      ${state.policies.length===0 ? `<div class="empty">尚未新增保單</div>` :
+      ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未新增保單</div>` :
         state.policies.map(p=>{
           const covCount = state.coverage.filter(c=>c.policy_id===p.id).length;
           return `<div data-view-policy="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], true, true, covCount).replace('class="card policy-card"','class="card policy-card tap"')}</div>`;
@@ -1723,13 +1750,14 @@ function renderClientHome(){
       <div class="icon-btn" id="logout">登出</div>
     </div>
     <div class="content">
+      <div class="hero">${ILLUS_HERO}<span class="seal">保障</span></div>
       <div class="btn-row" style="margin-bottom:20px;">
         <button class="btn btn-ghost btn-sm" id="open-message" style="flex:1;">💬 留言給業務</button>
         <button class="btn btn-ghost btn-sm" id="open-referral" style="flex:1;">👥 推薦朋友</button>
       </div>
 
       <div class="section-title">保單列表</div>
-      ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
+      ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
         state.policies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true)}</div>`).join('').replace(/class="card policy-card"/g,'class="card policy-card tap"')}
 
       ${state.coverage.length ? `
