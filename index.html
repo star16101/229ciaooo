@@ -113,6 +113,10 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 .tiny{font-size:.72rem;color:var(--muted)}
 .agree{display:flex;gap:8px;align-items:flex-start;font-size:.8rem;color:var(--muted);line-height:1.6}
 .agree input{margin-top:4px;accent-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row>*{min-width:0}
+.melt{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.melt i{display:block;height:100%;background:var(--c3);border-radius:99px;transition:width .3s}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -132,6 +136,27 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
   <p class="lead">把薪水丟進來，3 分鐘算出你的 631 配置、緊急預備金目標，順便檢查保單有沒有破洞。</p>
   </div>
 </div>
+
+<section class="step" aria-labelledby="h0s">
+  <span class="no">00</span>
+  <h2 id="h0s">先看看：錢放在銀行，會變薄多少？</h2>
+  <p class="sub">帳面上的數字會慢慢變多，但東西漲得更快，真正買得到的東西反而變少。</p>
+  <div class="box">
+    <div class="f"><label for="bkP">放在銀行的錢</label><div class="in"><span>NT$</span><input id="bkP" inputmode="numeric" value="1,000,000"></div></div>
+    <div class="f"><label for="bkY">放 <span id="bkYv">10</span> 年</label><input type="range" id="bkY" min="1" max="40" value="10"></div>
+    <div class="row">
+      <div class="f"><label for="bkR">銀行年利率 %</label><div class="in"><input id="bkR" inputmode="decimal" value="1"></div></div>
+      <div class="f"><label for="bkI">每年通膨率 %</label><div class="in"><input id="bkI" inputmode="decimal" value="2"></div></div>
+    </div>
+    <div class="nums">
+      <div><small>帳面上變成</small><strong id="bkNom">–</strong></div>
+      <div class="g"><small>實際購買力剩</small><strong id="bkReal">–</strong></div>
+      <div><small>等於少了</small><strong id="bkLoss">–</strong></div>
+    </div>
+    <div class="melt" aria-hidden="true"><i id="bkBar"></i></div>
+    <p class="note" id="bkNote"></p>
+  </div>
+</section>
 
 <section class="step" aria-labelledby="h1s">
   <span class="no">01</span>
@@ -314,6 +339,17 @@ async function submitLead(page,text,extra){
 }
 $("lead").addEventListener("submit",e=>{e.preventDefault();const {text,data}=buildCalc();submitLead("calc",text,{age:$("age").value.trim().slice(0,10),data});});
 $("copyBtn").addEventListener("click",copyOnly);
+function bank(){
+  const P=val($("bkP")),y=+$("bkY").value,r=(parseFloat($("bkR").value)||0)/100,i=(parseFloat($("bkI").value)||0)/100;
+  $("bkYv").textContent=y;
+  const nom=P*Math.pow(1+r,y),real=P*Math.pow((1+r)/(1+i),y),loss=P-real;
+  $("bkNom").textContent=big(nom);$("bkReal").textContent=big(real);$("bkLoss").textContent=loss>0?big(loss):"0";
+  $("bkBar").style.width=(P?Math.max(0,Math.min(100,real/P*100)):0)+"%";
+  $("bkNote").innerHTML=!P?"填入金額看看。":loss>0?`${fmt(P)} 元放 ${y} 年，帳面上變成 ${fmt(nom)} 元，看起來有變多；但東西每年漲 ${$("bkI").value}%，換算成今天的購買力只剩 <strong>${fmt(real)}</strong> 元，等於默默少了 <strong>${fmt(loss)}</strong> 元（約 ${Math.round(loss/P*100)}%）。`:`利率有跑贏通膨，購買力沒有變少。`;
+}
+$("bkP").addEventListener("input",()=>{const v=val($("bkP"));$("bkP").value=v?fmt(v):"";bank();});
+["bkY","bkR","bkI"].forEach(id=>$(id).addEventListener("input",bank));
+bank();
 step1();step2();quiz();
 </script>
 </body>
