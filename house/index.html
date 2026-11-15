@@ -120,6 +120,7 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 .row>*,.row3>*{min-width:0}
 .drow{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
 .drow:first-child{border-top:0;padding-top:0}
+.shy{font-size:.84rem;color:var(--ink);background:var(--soft);border-radius:12px;padding:10px 14px}
 </style>
 </head>
 <body>
@@ -158,9 +159,8 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
     <div class="f"><label for="inc">家庭每月總收入</label><div class="in"><span>NT$</span><input id="inc" inputmode="numeric" value="90,000"></div></div>
     <p class="note" id="mres"></p>
   </div>
-  <div class="ask"><strong>打完了嗎？複製傳給我，我來幫你評估</strong><p>按下面的按鈕複製你的房貸資料，到 IG 私訊貼給我就可以。</p>
-    <div class="pills" style="margin-top:8px"><button type="button" class="btn dark" id="copy2">複製傳給我</button><a class="btn" href="https://www.instagram.com/229ciaooo/" target="_blank" rel="noopener">到 IG 私訊</a></div>
-    <p class="note" id="copied2" aria-live="polite"></p></div>
+  <div class="ask"><strong>打完了嗎？送給我，我來幫你評估</strong><p>到最下面填稱呼和 IG，按「送出給蕎蕎」，我會私訊你。</p>
+    <div class="pills" style="margin-top:8px"><a class="btn dark" href="#lead">去填資料</a></div></div>
 </section>
 
 <section class="step" aria-labelledby="h3s">
@@ -202,13 +202,14 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
   <span class="no">05</span>
   <h2 id="h5s">私訊我，幫你看</h2>
   <p class="sub">填好後按「送出給蕎蕎」，我會在 IG 私訊你，幫你看看有沒有更輕鬆的繳法。</p>
+  <p class="shy">只想自己算算看也完全 OK，上面的結果都已經幫你算好了，不用留資料。想要我幫你看，再填下面就好。</p>
   <form class="box" id="lead" novalidate>
     <div class="f"><label for="nm">怎麼稱呼你</label><div class="in"><input id="nm" autocomplete="name" placeholder="例如：小美"></div></div>
     <div class="f"><label for="ig">你的 IG 帳號</label><div class="in"><span>@</span><input id="ig" autocomplete="off" placeholder="your_ig"></div></div>
     <div class="f"><label for="city">房子在哪個縣市、哪一區</label><div class="in"><input id="city" placeholder="例如：高雄市鼓山區"></div></div>
     <div class="f"><label for="msg">最想解決什麼（可不填）</label><div class="in"><input id="msg" placeholder="例如：每月繳太重、想裝修"></div></div>
     <label class="agree"><input type="checkbox" id="agree"> 我同意蕎蕎用這些資料在 IG 聯絡我、幫我做規劃</label>
-    <div class="pills"><button type="submit" class="btn dark" id="sendBtn">送出給蕎蕎</button><button type="button" class="btn" id="copyBtn">只複製結果</button></div>
+    <div class="pills"><button type="submit" class="btn dark" id="sendBtn">送出給蕎蕎</button></div>
     <p class="note" id="copied" aria-live="polite"></p>
     <textarea id="out" readonly hidden></textarea>
   </form>
@@ -276,11 +277,9 @@ async function submitLead(page,text,extra){
   const b=$("sendBtn");b.disabled=true;b.textContent="送出中…";
   try{await sendLead(Object.assign({page,name:v("nm").slice(0,50),ig:v("ig").replace(/^@/,"").slice(0,60),message:v("msg").slice(0,300),summary:text.slice(0,3000)},extra));
     sent=true;b.textContent="已送出 ✓";st.innerHTML="收到了！我會在 IG 私訊你 <strong>@"+v("ig").replace(/^@/,"")+"</strong>。想快一點，也可以直接私訊我。";}
-  catch(err){b.disabled=false;b.textContent="送出給蕎蕎";st.textContent="送出失敗，請按「只複製結果」再到 IG 私訊我。";}
+  catch(err){b.disabled=false;b.textContent="送出給蕎蕎";st.textContent="送出失敗，請直接到 IG 私訊我，跟我說你想問什麼就好。";}
 }
 $("lead").addEventListener("submit",e=>{e.preventDefault();const r=calc();submitLead("house",buildText(),{city:$("city").value.trim().slice(0,60),data:{survey:sv,mortgage:r.mb,rate:r.mr,years:r.my,income:r.inc,monthly:Math.round(r.all),ratio:Math.round(r.ratio*100),newMonthly:Math.round(r.np),newYears:r.ny,newRate:r.nr}});});
-$("copyBtn").addEventListener("click",()=>doCopy("copied"));
-$("copy2").addEventListener("click",()=>doCopy("copied2"));
 survey();calc();
 
 </script>
