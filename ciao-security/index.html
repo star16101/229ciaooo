@@ -678,32 +678,27 @@ function phoneToCreds(phone){
 async function handleClientPhoneSubmit(e){
   e.preventDefault();
   const phone = document.getElementById('c-phone').value.trim();
+  const code = document.getElementById('c-code').value.trim().toUpperCase();
   if(!phone){ return; }
+  state.clientPhoneCache = phone;
   const { email, password } = phoneToCreds(phone);
   const btn = document.getElementById('client-phone-submit');
   btn.disabled = true; btn.textContent = '登入中…';
 
-  if(!state.clientNeedsCode){
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    btn.disabled = false; btn.textContent = '登入';
-    if(!error) return; // afterAuthChange 會自動導向
-    // 找不到帳號 -> 第一次使用，需要邀請碼開通
-    state.clientNeedsCode = true;
-    state.clientPhoneCache = phone;
-    setMsg('ok', '第一次使用這支電話號碼，請輸入業務提供的邀請碼完成開通');
-    render();
-    return;
-  }
+  // 先試著直接登入（已開通過的客戶）
+  const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+  if(!signInErr){ return; } // afterAuthChange 會自動導向
 
-  // 開通流程
-  const code = document.getElementById('c-code').value.trim();
-  const name = document.getElementById('c-name').value.trim();
-  if(!code){ btn.disabled=false; btn.textContent='完成開通'; return; }
-  const { error } = await sb.auth.signUp({ email, password, options:{ data:{ invite_code: code, display_name: name || '客戶' } } });
-  btn.disabled = false; btn.textContent = '完成開通';
-  if(error){ setMsg('error', '開通失敗，請確認邀請碼是否正確'); return; }
+  btn.disabled = false; btn.textContent = '登入';
+  if(!code){ setMsg('error', '第一次使用，請輸入業務提供的邀請碼'); return; }
+
+  // 第一次使用：用邀請碼開通
+  btn.disabled = true; btn.textContent = '開通中…';
+  const { error } = await sb.auth.signUp({ email, password, options:{ data:{ invite_code: code, display_name: '客戶' } } });
+  if(error){ btn.disabled = false; btn.textContent = '登入'; setMsg('error', '開通失敗，請確認邀請碼是否正確'); return; }
   const { error: err2 } = await sb.auth.signInWithPassword({ email, password });
-  if(err2){ setMsg('error', '開通成功，但自動登入失敗，請再按一次登入'); state.clientNeedsCode=false; render(); }
+  btn.disabled = false; btn.textContent = '登入';
+  if(err2){ setMsg('error', '開通成功，但自動登入失敗，請再按一次登入'); }
 }
 
 function loginFormHtml(){
@@ -715,21 +710,12 @@ function loginFormHtml(){
   `;
 }
 function clientPhoneFormHtml(){
-  if(!state.clientNeedsCode){
-    return `
-      <form id="client-phone-form">
-        <div class="field"><label>手機號碼</label><input id="c-phone" type="tel" inputmode="numeric" placeholder="0912345678" required autofocus></div>
-        <div class="hint" style="margin-bottom:14px;">第一次使用會請您輸入業務給的邀請碼，之後只要打電話號碼即可登入</div>
-        <button class="btn btn-primary" id="client-phone-submit" type="submit">登入</button>
-      </form>
-    `;
-  }
   return `
     <form id="client-phone-form">
-      <div class="field"><label>手機號碼</label><input id="c-phone" type="tel" value="${esc(state.clientPhoneCache||'')}" readonly style="background:var(--surface-2);color:var(--ink-soft);"></div>
-      <div class="field"><label>邀請碼</label><input id="c-code" required placeholder="請輸入業務提供的邀請碼" autofocus></div>
-      <div class="field"><label>您的姓名（選填）</label><input id="c-name"></div>
-      <button class="btn btn-primary" id="client-phone-submit" type="submit">完成開通</button>
+      <div class="field"><label>手機號碼</label><input id="c-phone" type="tel" inputmode="numeric" placeholder="0912345678" value="${esc(state.clientPhoneCache||'')}" required></div>
+      <div class="field"><label>邀請碼</label><input id="c-code" autocapitalize="characters" autocomplete="off" placeholder="第一次使用才需要輸入"></div>
+      <div class="hint" style="margin-bottom:14px;">第一次使用請輸入業務提供的邀請碼，之後只要輸入手機號碼即可登入</div>
+      <button class="btn btn-primary" id="client-phone-submit" type="submit">登入</button>
     </form>
   `;
 }
