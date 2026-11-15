@@ -780,7 +780,6 @@ function renderLogin(){
   app.innerHTML = `
     <div class="topbar"><div class="brand"><div class="title serif"><span class="island-emoji">🏝️</span>島嶼團隊出品</div><div class="sub">保單彙整・一目瞭然 By 蕎蕎</div></div></div>
     <div class="content">
-      <div class="hero">${ILLUS_HERO}<span class="seal">島嶼</span></div>
       <div class="tabs">
         <div class="tab ${state.authTab==='client'?'active':''}" data-tab="client">客戶登入</div>
         <div class="tab ${state.authTab==='admin'?'active':''}" data-tab="admin">業務登入</div>
@@ -1750,7 +1749,6 @@ function renderClientHome(){
       <div class="icon-btn" id="logout">登出</div>
     </div>
     <div class="content">
-      <div class="hero">${ILLUS_HERO}<span class="seal">保障</span></div>
       <div class="btn-row" style="margin-bottom:20px;">
         <button class="btn btn-ghost btn-sm" id="open-message" style="flex:1;">💬 留言給業務</button>
         <button class="btn btn-ghost btn-sm" id="open-referral" style="flex:1;">👥 推薦朋友</button>
