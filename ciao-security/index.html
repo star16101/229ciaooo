@@ -329,6 +329,90 @@
   .btn,.btn-sm,.icon-btn,.add-item-btn,.fab,button{border-radius:999px;}
   .add-item-btn{padding:11px 14px;}
   .item-row .rm{border-radius:999px;}
+
+  /* ===== 金黃風（NFT app 參考） ===== */
+  :root{
+    --bg:#EDBF3E;
+    --surface:#FFFFFF;
+    --surface-2:#F6EBC9;
+    --ink:#2B2107;
+    --ink-soft:#8A7330;
+    --accent:#2B2107;
+    --accent-deep:#171103;
+    --accent-ink:#2B2107;
+    --accent-soft:#FBEFC8;
+    --rose:#E8704F;
+    --rose-soft:#FBDDD2;
+    --sage:#9A7A1C;
+    --sage-soft:#F6EBC9;
+    --border:rgba(43,33,7,.14);
+    --danger:#C8452E;
+    --danger-soft:#FBDDD2;
+    --brown:#6B4D10;
+    --radius:26px;
+    --radius-sm:18px;
+    --shadow:0 10px 30px rgba(107,77,16,.16);
+  }
+  html,body{background:#EDBF3E;background-image:linear-gradient(180deg,#F1C84E 0%,#EBBB38 55%,#E6B230 100%);background-attachment:fixed;color:var(--ink);}
+  .topbar{background:rgba(241,200,78,.88);border-bottom:none;backdrop-filter:blur(10px);}
+  .brand .title{color:#2B2107;letter-spacing:1px;}
+  .brand .sub{color:rgba(43,33,7,.62);}
+  .icon-btn{background:#fff;border:none;color:#2B2107;box-shadow:0 4px 12px rgba(107,77,16,.18);}
+  .back-btn{color:#2B2107;font-weight:600;}
+
+  .card{background:#fff;border:none;border-radius:26px;box-shadow:var(--shadow);}
+  .policy-card{border-left:none;}
+  .policy-card .insurer{color:#B58A12;letter-spacing:1px;}
+  .policy-card .name{color:#2B2107;font-size:19px;}
+  .pol-no{color:#fff;background:#E8704F;font-family:'JinXuan','Noto Serif TC',serif;font-size:14px;padding:5px 11px;border-radius:999px;letter-spacing:.5px;}
+  .tag{background:#F6EBC9;color:#6B4D10;border-radius:999px;padding:6px 12px;}
+  .tag.accent{background:#2B2107;color:#fff;}
+  .item-line,.rider-row{border-bottom:1px solid rgba(43,33,7,.08);}
+  .item-line .label{color:#2B2107;}
+  .item-line .amount{color:#2B2107;font-weight:800;font-size:16px;}
+  .rider-row .rider-tags{color:#B58A12;}
+  .chevron{color:#B58A12;}
+
+  .field label{color:rgba(43,33,7,.7);font-weight:600;}
+  .field input,.field select,.field textarea{background:#fff;border:2px solid transparent;border-radius:18px;color:#2B2107;box-shadow:0 4px 14px rgba(107,77,16,.1);}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#2B2107;box-shadow:0 4px 14px rgba(107,77,16,.14);}
+  .field input::placeholder{color:#B9A66A;}
+
+  .btn{border:none;border-radius:999px;letter-spacing:2px;}
+  .btn-primary{background:#1E1704;color:#fff;box-shadow:0 8px 20px rgba(30,23,4,.28);}
+  .btn-primary:active{background:#000;box-shadow:0 3px 8px rgba(30,23,4,.3);}
+  .btn-secondary{background:#fff;color:#2B2107;border:none;box-shadow:0 4px 14px rgba(107,77,16,.14);}
+  .btn-sage{background:#6B4D10;color:#fff;box-shadow:0 6px 16px rgba(107,77,16,.3);}
+  .btn-danger{background:#C8452E;color:#fff;box-shadow:none;}
+  .btn-ghost{background:#fff;color:#2B2107;border:none;box-shadow:0 4px 14px rgba(107,77,16,.14);}
+
+  .tabs{background:rgba(255,255,255,.55);border:none;border-bottom:none;padding:5px;gap:4px;border-radius:999px;}
+  .tab{background:transparent;color:rgba(43,33,7,.6);border-radius:999px;border-bottom:none;margin-bottom:0;padding:11px;}
+  .tab.active{background:#1E1704;color:#fff;border-bottom:none;box-shadow:0 4px 12px rgba(30,23,4,.25);}
+
+  .section-title{color:#2B2107;}
+  .section-title::after{background:rgba(43,33,7,.18);}
+  .hint{color:rgba(43,33,7,.62);}
+  .link,.link-muted{color:rgba(43,33,7,.6);}
+  .empty,.loading{color:rgba(43,33,7,.62);}
+  .msg{border-radius:18px;}
+  .msg-ok{background:rgba(255,255,255,.75);color:#2B2107;}
+  .msg-error{background:#fff;color:#C8452E;}
+
+  .fab{background:#fff;color:#2B2107;border:none;border-radius:50%;box-shadow:0 10px 24px rgba(107,77,16,.3);font-weight:400;}
+  .modal{background:#FFF7DC;border-radius:30px 30px 0 0;}
+  .modal-title{color:#2B2107;}
+  .modal-handle{background:rgba(43,33,7,.2);}
+  .modal-backdrop{background:rgba(43,33,7,.5);}
+  .add-item-btn{background:rgba(255,255,255,.7);border:2px dashed rgba(43,33,7,.25);color:#6B4D10;border-radius:999px;}
+  .paste-box{background:#6B4D10;border:none;border-radius:22px;color:#fff;}
+  .paste-box .hint,.paste-box label{color:rgba(255,255,255,.8);}
+  .draft-card{background:#fff;border:none;border-radius:20px;box-shadow:0 4px 14px rgba(107,77,16,.1);}
+  .invite-box{background:#6B4D10;color:#fff;border:none;border-radius:20px;}
+  .invite-code{color:#FFD65A;}
+  .client-row{border-bottom:1px solid rgba(43,33,7,.1);}
+  .client-row .ccount{color:#8A7330;}
+  .item-row .rm{color:#C8452E;}
 </style>
 </head>
 <body>
