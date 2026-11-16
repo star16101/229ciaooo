@@ -650,6 +650,11 @@
   .cov-group:first-child{margin-top:4px;}
   .cov-group-bar{width:18px;height:5px;border-radius:99px;background:var(--grad);display:inline-block;}
   .cov-sub{font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--ink-soft);margin:14px 0 0;padding-left:26px;}
+  .a2hs{margin-top:14px;padding:14px 16px;border-radius:20px;background:var(--bg);box-shadow:var(--press);font-size:13px;color:var(--ink-soft);line-height:1.7;}
+  .a2hs-t{font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .a2hs ol{margin:0;padding-left:20px;}
+  .a2hs b{color:var(--accent-ink);}
+  .a2hs-n{margin-top:6px;font-size:12px;opacity:.8;}
 </style>
 </head>
 <body>
@@ -1875,7 +1880,7 @@ function openAddClientModal(){
 
 function showInviteCode(client){
   const url = location.origin + location.pathname;
-  const msg = `【${client.name}】你的保障帳戶\n網址：${url}\n第一次登入：輸入手機號碼 → 輸入邀請碼 ${client.invite_code}`;
+  const msg = `【${client.name}】你的保障帳戶\n網址：${url}\n\n第一次登入：輸入手機號碼 → 輸入邀請碼 ${client.invite_code}\n\n📲 加入主畫面（像 App 一樣打開）\n① 用 Safari 開啟上面的網址\n② 點下方中間的「分享」按鈕（方框加向上箭頭）\n③ 往下滑，點「加入主畫面」\n④ 點右上角「新增」，桌面就會出現圖示\n（Android：Chrome 右上角 ⋮ →「加到主畫面」）`;
   renderModal(`
     <div class="modal-title">${esc(client.name)}・邀請碼已建立</div>
     <div class="invite-box">
@@ -1885,7 +1890,17 @@ function showInviteCode(client){
       <div class="inv-lab">邀請碼</div>
       <div class="inv-row"><div class="invite-code" style="margin:0;">${esc(client.invite_code)}</div><button class="inv-copy" data-copy="${esc(client.invite_code)}">複製</button></div>
     </div>
-    <button class="btn btn-primary" id="ic-copyall" style="margin-top:16px;">一鍵複製邀請訊息</button>
+    <div class="a2hs">
+      <div class="a2hs-t">📲 加入主畫面（像 App 一樣打開）</div>
+      <ol>
+        <li>用 <b>Safari</b> 開啟上面的網址</li>
+        <li>點下方中間的<b>「分享」</b>按鈕（方框加向上箭頭）</li>
+        <li>往下滑，點<b>「加入主畫面」</b></li>
+        <li>點右上角<b>「新增」</b>，桌面就會出現圖示</li>
+      </ol>
+      <div class="a2hs-n">Android：Chrome 右上角 ⋮ →「加到主畫面」</div>
+    </div>
+    <button class="btn btn-primary" id="ic-copyall" style="margin-top:16px;">一鍵複製邀請訊息（含加入主畫面步驟）</button>
     <button class="btn btn-secondary" id="ic-close" style="margin-top:10px;">知道了</button>
   `);
   const doCopy = async (text, btn, done)=>{
