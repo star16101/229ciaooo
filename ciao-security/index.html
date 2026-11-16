@@ -615,6 +615,16 @@
 
   .rc-t{font-size:13.5px!important;white-space:nowrap;}
   .rc-go{width:30px;height:30px;padding:0!important;display:flex;align-items:center;justify-content:center;font-size:18px!important;line-height:1;}
+
+  /* round 8 */
+  .client-list{margin-bottom:6px;}
+  .client-row{display:flex!important;justify-content:space-between;align-items:center;padding:9px 20px!important;min-height:58px;border-radius:999px!important;margin-bottom:12px;border-bottom:0!important;}
+  .client-row .cname{font-size:15px;font-weight:700;line-height:1.25;}
+  .client-row .ccount{font-size:11px;margin-top:1px;color:var(--ink-soft)!important;}
+  .client-row .chevron{width:28px;height:28px;border-radius:50%;box-shadow:var(--raise-sm);display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .sn-head{font-size:12px;font-weight:700;color:var(--ink-soft);letter-spacing:.15em;margin:18px 6px 10px;display:flex;align-items:baseline;gap:8px;}
+  .sn-head span{font-size:10px;font-weight:500;letter-spacing:.08em;opacity:.85;}
+  .chip small{font-size:9px;opacity:.7;margin-left:4px;font-weight:500;}
 </style>
 </head>
 <body>
@@ -1473,11 +1483,33 @@ function renderAdminSignup(){
 }
 
 // ---------- ADMIN HOME ----------
+const SURNAME_STROKES={"丁":2,"丘":5,"于":3,"仇":4,"仰":6,"仲":6,"任":6,"伊":6,"伍":6,"伏":6,"何":7,"侯":9,"俞":9,"倪":10,"傅":12,"儲":18,"元":4,"充":6,"公":4,"冀":16,"冉":5,"冷":7,"凌":10,"刁":2,"別":7,"利":7,"劉":15,"勞":12,"勾":4,"包":5,"匡":6,"卓":8,"卜":2,"卞":4,"印":6,"危":6,"厲":15,"古":5,"史":5,"司":5,"吉":6,"向":6,"吳":7,"呂":7,"周":8,"和":8,"咸":9,"唐":10,"喬":12,"單":12,"喻":12,"嚴":20,"國":11,"堵":12,"塗":13,"壽":14,"夏":10,"奚":10,"姚":9,"姜":9,"姬":10,"婁":11,"孔":4,"孟":8,"季":8,"孫":10,"安":6,"宋":7,"宗":8,"官":8,"宣":9,"宮":10,"宰":10,"家":10,"容":10,"宿":11,"寇":11,"富":12,"寧":14,"封":9,"尚":8,"尤":4,"尹":4,"居":8,"屈":8,"屠":12,"岑":7,"崔":11,"嵇":12,"巢":11,"左":5,"巫":7,"巴":4,"師":10,"席":10,"常":11,"干":3,"平":5,"幸":8,"康":11,"庾":12,"廉":13,"廖":14,"廣":15,"弓":3,"弘":5,"張":11,"強":11,"彭":12,"後":9,"徐":10,"從":11,"惠":12,"慎":14,"慕":15,"應":17,"戈":4,"戎":6,"成":6,"戚":11,"戴":17,"房":8,"扶":8,"支":4,"敖":11,"文":4,"方":4,"施":9,"昌":8,"明":8,"易":8,"時":10,"晏":10,"景":12,"暴":15,"曲":6,"曹":11,"曾":12,"朱":6,"李":7,"杜":7,"束":7,"杭":8,"東":8,"林":8,"柏":9,"查":9,"柯":9,"柳":9,"柴":9,"桂":10,"桑":10,"桓":10,"梁":11,"梅":11,"楊":13,"榮":14,"樂":15,"樊":15,"權":22,"欒":23,"歐":15,"步":7,"武":8,"殳":4,"段":9,"殷":10,"毛":4,"水":4,"江":7,"池":7,"汪":8,"沃":8,"沈":8,"沙":8,"洪":10,"浦":11,"涂":11,"游":13,"湛":13,"湯":13,"溫":14,"滑":14,"滕":14,"滿":15,"潘":16,"濮":18,"烏":10,"焦":12,"熊":14,"燕":16,"牛":4,"牧":8,"狄":8,"王":4,"班":11,"甄":14,"甘":5,"田":5,"申":5,"畢":11,"白":5,"皮":5,"益":10,"盛":11,"盧":16,"瞿":18,"石":5,"祁":8,"祖":10,"祝":10,"祿":13,"禹":9,"秋":9,"秦":10,"程":12,"穆":16,"竇":20,"章":11,"童":12,"符":11,"管":14,"簡":18,"籍":20,"米":6,"紀":9,"索":10,"終":11,"經":13,"繆":17,"羅":20,"羊":6,"翁":10,"習":11,"翟":14,"耿":10,"聞":14,"聶":18,"胡":11,"胥":11,"能":12,"臧":14,"舒":12,"艾":8,"芮":10,"花":10,"苗":11,"范":11,"茅":11,"茹":12,"荀":12,"荊":12,"莊":13,"莘":13,"莫":13,"華":14,"萬":13,"葉":15,"葛":15,"董":15,"蒙":16,"蒲":16,"蒼":16,"蓋":16,"蔚":17,"蔡":17,"蔣":17,"蕭":18,"薄":19,"薛":19,"藍":20,"藺":22,"蘇":22,"虞":13,"融":16,"衛":15,"衡":16,"袁":10,"裘":13,"裴":14,"褚":15,"解":13,"計":9,"許":11,"詹":13,"談":15,"諸":16,"謝":17,"譚":19,"谷":7,"豐":18,"貝":7,"貢":10,"費":12,"賀":12,"賈":13,"賴":16,"越":12,"趙":14,"路":13,"車":7,"辛":7,"農":13,"通":14,"連":14,"邊":22,"邢":11,"那":11,"邰":12,"邱":12,"邵":12,"郎":13,"郝":14,"郭":15,"都":16,"鄂":16,"鄒":17,"鄔":17,"鄧":19,"鄭":19,"酆":25,"金":8,"鈕":12,"錢":16,"鍾":17,"閔":12,"閻":16,"闕":18,"關":19,"阮":12,"陰":16,"陳":16,"陶":16,"陸":16,"隆":17,"雍":13,"雙":18,"雲":12,"雷":13,"霍":16,"靳":13,"鞏":15,"鞠":17,"韋":9,"韓":17,"韶":14,"項":12,"須":12,"顏":18,"顧":21,"養":15,"餘":16,"饒":21,"馬":10,"馮":12,"駱":16,"高":10,"鬱":29,"魏":18,"魚":11,"魯":15,"鮑":16,"鳳":14,"麻":11,"黃":12,"黎":15,"齊":14,"龍":16,"龐":19,"龔":22,"陽":17,"上":3,"徒":10,"皇":9,"甫":7,"令":5,"狐":9,"宇":6,"長":8,"遲":19,"西":6,"門":8,"端":14,"木":4};
+const COMPOUND_SURNAMES=["歐陽", "司馬", "諸葛", "上官", "范姜", "司徒", "皇甫", "東方", "夏侯", "令狐", "公孫", "慕容", "宇文", "長孫", "尉遲", "西門", "端木", "張簡"];
+
+function surnameOf(name){
+  const n=String(name||'').trim();
+  const comp=COMPOUND_SURNAMES.find(c=>n.startsWith(c));
+  return comp || n.charAt(0);
+}
+function surnameStrokes(sn){
+  let t=0; for(const ch of sn){ const v=SURNAME_STROKES[ch]; if(v==null) return 99; t+=v; } return t;
+}
 function renderAdminHome(){
   const strokeCollator = new Intl.Collator('zh-Hant-TW-u-co-stroke');
   const q = (state.clientSearch||'').trim();
   const filtered = q ? state.clients.filter(c=>c.name.includes(q)) : state.clients;
-  const sorted = [...filtered].sort((a,b)=>strokeCollator.compare(a.name,b.name));
+  const sorted = [...filtered].sort((a,b)=>{
+    const sa=surnameOf(a.name), sb=surnameOf(b.name);
+    const d=surnameStrokes(sa)-surnameStrokes(sb);
+    if(d) return d;
+    if(sa!==sb) return strokeCollator.compare(sa,sb);
+    return strokeCollator.compare(a.name,b.name);
+  });
+  const surnames = [...new Set(sorted.map(c=>surnameOf(c.name)))];
+  if(state.surnameFilter && !surnames.includes(state.surnameFilter)) state.surnameFilter='';
+  const sf = state.surnameFilter || '';
+  const shown = sf ? sorted.filter(c=>surnameOf(c.name)===sf) : sorted;
+  let lastSn = null;
   const unreadMsgCount = state.messages.filter(m=>!m.is_read).length;
   const newReferralCount = state.referrals.filter(r=>!r.contacted).length;
 
@@ -1500,12 +1532,13 @@ function renderAdminHome(){
       </div>
 
       <div class="section-title">客戶名單・共 ${state.clients.length} 位</div>
-      <div class="field" style="margin-bottom:10px;">
+      ${surnames.length>1 ? `<div class="chip-row"><button class="chip ${!sf?'active':''}" data-sn="">全部</button>${surnames.map(n=>`<button class="chip ${sf===n?'active':''}" data-sn="${esc(n)}">${esc(n)}<small>${surnameStrokes(n)<99?surnameStrokes(n):''}</small></button>`).join('')}</div>` : ''}
+      <div class="field" style="margin-bottom:14px;">
         <input id="client-search" placeholder="搜尋客戶姓名" value="${esc(state.clientSearch||'')}">
       </div>
-      <div class="card" style="padding:6px 14px;">
-        ${sorted.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
-          sorted.map(c=>`
+      <div class="client-list">
+        ${shown.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
+          shown.map(c=>{ const sn=surnameOf(c.name); const head = (!sf && sn!==lastSn) ? `<div class="sn-head">${esc(sn)}<span>${surnameStrokes(sn)<99?surnameStrokes(sn)+' 劃':''}</span></div>` : ''; lastSn=sn; return head+`
             <div class="client-row" data-id="${c.id}">
               <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單</div></div>
               <div style="display:flex;align-items:center;gap:14px;">
@@ -1514,7 +1547,7 @@ function renderAdminHome(){
                 <div class="chevron">›</div>
               </div>
             </div>
-          `).join('')}
+          `}).join('')}
       </div>
       <div class="btn-row" style="margin:14px 0 90px;">
       <button class="btn btn-ghost btn-sm" id="backup-export" style="flex:1;">⬇️ 匯出備份</button>
@@ -1533,6 +1566,7 @@ function renderAdminHome(){
   document.getElementById('go-referrals').onclick = ()=>{ state.view='admin-referrals'; render(); };
   const searchInput = document.getElementById('client-search');
   searchInput.oninput = ()=>{ state.clientSearch = searchInput.value; render(); document.getElementById('client-search').focus(); };
+  app.querySelectorAll('[data-sn]').forEach(el=>el.onclick=()=>{ state.surnameFilter=el.dataset.sn; render(); });
   app.querySelectorAll('.client-row').forEach(el=>{
     el.onclick = async ()=>{
       const c = state.clients.find(x=>x.id===el.dataset.id);
