@@ -1559,13 +1559,13 @@ function renderAdminHome(){
       </div>
 
       <div class="section-title">客戶名單・共 ${state.clients.length} 位</div>
-      ${surnames.length>1 ? `<div class="chip-row"><button class="chip ${!sf?'active':''}" data-sn="">全部</button>${surnames.map(n=>`<button class="chip ${sf===n?'active':''}" data-sn="${esc(n)}">${esc(n)}<small>${surnameStrokes(n)<99?surnameStrokes(n):''}</small></button>`).join('')}</div>` : ''}
+      ${surnames.length>1 ? `<div class="chip-row"><button class="chip ${!sf?'active':''}" data-sn="">全部</button>${surnames.map(n=>`<button class="chip ${sf===n?'active':''}" data-sn="${esc(n)}">${esc(n)}<small>${state.clients.filter(c=>surnameOf(c.name)===n).length}</small></button>`).join('')}</div>` : ''}
       <div class="field" style="margin-bottom:14px;">
         <input id="client-search" placeholder="搜尋客戶姓名" value="${esc(state.clientSearch||'')}">
       </div>
       <div class="client-list">
         ${shown.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
-          shown.map(c=>{ const sn=surnameOf(c.name); const head = (!sf && sn!==lastSn) ? `<div class="sn-head">${esc(sn)}<span>${surnameStrokes(sn)<99?surnameStrokes(sn)+' 劃':''}</span></div>` : ''; lastSn=sn; return head+`
+          shown.map(c=>{ const sn=surnameOf(c.name); const head = (!sf && sn!==lastSn) ? `<div class="sn-head">${esc(sn)}<span>${state.clients.filter(c=>surnameOf(c.name)===sn).length} 位</span></div>` : ''; lastSn=sn; return head+`
             <div class="client-row" data-id="${c.id}">
               <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單</div></div>
               <div style="display:flex;align-items:center;gap:14px;">
