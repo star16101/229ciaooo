@@ -638,6 +638,13 @@
   .fam-name{flex:1;font-size:14px;}
   .fam-del{border:0;background:transparent;color:var(--ink-soft);font-size:13px;padding:4px 8px;cursor:pointer;border-radius:999px;}
   .fam-del.sure{color:#fff;background:#d9534f;}
+
+  .inv-lab{font-size:11px;letter-spacing:.15em;color:var(--ink-soft);margin:14px 2px 6px;}
+  .inv-row{display:flex;align-items:center;gap:10px;}
+  .inv-url{flex:1;min-width:0;font-size:13px;word-break:break-all;color:var(--ink);line-height:1.5;}
+  .inv-copy{flex:none;border:0;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--accent-ink);background:var(--bg);box-shadow:var(--raise);cursor:pointer;}
+  .inv-copy:active{box-shadow:var(--press);}
+  .invite-box{color:var(--ink-soft)!important;line-height:1.7;}
 </style>
 </head>
 <body>
@@ -1850,14 +1857,31 @@ function openAddClientModal(){
 }
 
 function showInviteCode(client){
+  const url = location.origin + location.pathname;
+  const msg = `【${client.name}】你的保障帳戶\n網址：${url}\n第一次登入：輸入手機號碼 → 輸入邀請碼 ${client.invite_code}`;
   renderModal(`
     <div class="modal-title">${esc(client.name)}・邀請碼已建立</div>
     <div class="invite-box">
-      請把以下邀請碼提供給客戶，讓他到系統點選「客戶開通」自行設定帳號密碼
-      <div class="invite-code">${esc(client.invite_code)}</div>
+      請把以下網址與邀請碼提供給客戶，第一次登入時輸入手機號碼與邀請碼，即可自行設定帳號
+      <div class="inv-lab">系統網址</div>
+      <div class="inv-row"><div class="inv-url">${esc(url)}</div><button class="inv-copy" data-copy="${esc(url)}">複製</button></div>
+      <div class="inv-lab">邀請碼</div>
+      <div class="inv-row"><div class="invite-code" style="margin:0;">${esc(client.invite_code)}</div><button class="inv-copy" data-copy="${esc(client.invite_code)}">複製</button></div>
     </div>
-    <button class="btn btn-primary" id="ic-close" style="margin-top:16px;">知道了</button>
+    <button class="btn btn-primary" id="ic-copyall" style="margin-top:16px;">一鍵複製邀請訊息</button>
+    <button class="btn btn-secondary" id="ic-close" style="margin-top:10px;">知道了</button>
   `);
+  const doCopy = async (text, btn, done)=>{
+    const old = btn.textContent;
+    try{ await navigator.clipboard.writeText(text); btn.textContent = done; }
+    catch(e){
+      try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); btn.textContent = done; }
+      catch(e2){ btn.textContent = '請手動複製'; }
+    }
+    setTimeout(()=>{ if(btn.isConnected) btn.textContent = old; }, 1800);
+  };
+  document.querySelectorAll('#modal-root .inv-copy').forEach(b=>b.onclick=()=>doCopy(b.dataset.copy, b, '已複製 ✓'));
+  document.getElementById('ic-copyall').onclick = (e)=>doCopy(msg, e.currentTarget, '已複製，貼給客戶就好 ✓');
   document.getElementById('ic-close').onclick = closeModal;
 }
 
