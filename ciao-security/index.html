@@ -580,6 +580,13 @@
 
   /* round 4 */
   .top-right .island-mascot{width:92px!important;margin:-14px -4px -10px 0;}
+
+  /* round 5 */
+  .cov-src{font-size:12px;font-weight:700;color:var(--accent-ink);letter-spacing:.04em;margin-bottom:8px;padding-bottom:8px;border-bottom:2px solid rgba(198,202,211,.45);line-height:1.5;}
+  .item-line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0!important;}
+  .item-line .label{color:var(--ink);font-size:14px;flex:1;min-width:0;}
+  .item-line .amount{font-weight:700;color:var(--ink);font-size:14px;text-align:right;white-space:nowrap;}
+  .total-card{padding:18px 20px!important;}
 </style>
 </head>
 <body>
@@ -1193,24 +1200,64 @@ function openFortune(){
   };
 }
 
+// ---------- 保障內容顯示：非一次性給付加「最高」 ----------
+function covCleanLabel(cat){
+  return String(cat||'').trim().replace(/[（(]最高[）)]/g,'').replace(/[（(]一次金[）)]/g,'').replace(/[（(]每次[）)]/g,'').replace(/[（(]每月[）)]/g,'');
+}
+function covUnitSuffix(cat, content){
+  if(/\/\s*(日|次|月)/.test(content||'')) return '';
+  const c=String(cat||'');
+  if(/[（(]每次[）)]/.test(c)) return '/次';
+  if(/[（(]每月[）)]|每月/.test(c)) return '/月';
+  if(/日額|病房費/.test(c)) return '/日';
+  return '';
+}
+function covIsNonLump(cat){
+  const c=String(cat||'');
+  if(/扶助|每月|月給付|日額|實支|雜費|手術|醫療限額|骨折|住院|病房|門診|療程|補貼/.test(c)) return true;
+  return !/重大傷病|重大疾病|輕度癌症|重度癌症|癌症罹患|身故|失能金|燒燙傷|一次金|罹患金/.test(c);
+}
+function covValueText(cat, content){
+  const v=String(content||'').trim(); if(!v) return '';
+  const unit=covUnitSuffix(cat, v);
+  if(covIsNonLump(cat) && !/^最高/.test(v)) return `最高 ${v}${unit}`;
+  return v+unit;
+}
+function covFormatWan(content){
+  const p=parseAmount(content);
+  if(p && p.unit==='元' && p.n>=10000) return `${Math.round(p.n/100)/100}萬`;
+  return content;
+}
+const COV_ORDER=[/重大傷病/,/重大疾病/,/癌症罹患|輕度癌症|重度癌症/,/燒燙傷/,/^疾病身故/,/^意外身故/,/癌症身故/,/失能金/,/扶助/,/醫療限額|骨折/,/病房費|日額|補貼/,/特定手術/,/手術/,/雜費/,/癌症/];
+function covRank(label){ const i=COV_ORDER.findIndex(r=>r.test(label)); return i<0?99:i; }
+function renderCoverageTotal(list){
+  if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增保障內容</div>`;
+  const prepared = list.map(c=>({ category: covCleanLabel(c.category), content: String(c.content||'').trim(), _orig:c.category, phase:'', subgroup:'' }));
+  const merged = mergeSameCategory(prepared).map(m=>({...m, content: covFormatWan(m.content)}));
+  // 同名但原始標示不同（例如日額、每月）要保留單位判斷：以原始分類的第一筆為準
+  const origByLabel = {}; prepared.forEach(p=>{ if(!origByLabel[p.category]) origByLabel[p.category]=p._orig; });
+  merged.sort((a,b)=>covRank(a.category)-covRank(b.category));
+  return `<div class="card total-card">
+    ${merged.map(m=>`<div class="item-line"><div class="label">${esc(m.category)}</div><span class="amount">${esc(covValueText(origByLabel[m.category]||m.category, m.content))}</span></div>`).join('')}
+    <div class="hint" style="margin-top:12px;line-height:1.7;">「最高」表示非一次性給付（如日額、實支實付、手術），依實際住院或醫療狀況給付，以此為上限。</div>
+  </div>`;
+}
 function renderCoverageGrouped(list, editable){
-  if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增加總保障內容</div>`;
-  const grouped = groupCoverage(editable ? list : mergeSameCategory(list));
-  return grouped.map(g=>`
-    <div class="card" style="margin-bottom:14px;">
-      <div style="font-weight:700;font-size:15px;margin-bottom:6px;color:var(--accent-ink);">${esc(g.phase)}</div>
-      ${Object.keys(g.subgroups).map(sub=>`
-        ${sub ? `<div style="font-size:13px;font-weight:600;color:var(--sage);margin:10px 0 2px;">${esc(sub)}</div>` : ''}
-        ${g.subgroups[sub].map(c=>`
-          <div class="item-line">
-            <div class="label">${esc(c.category)}</div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="amount">${esc(c.content||'')}</span>
-              ${editable ? `<span style="cursor:pointer;color:var(--ink-soft);" data-edit-cov="${c.id}">✎</span>
-              <span style="cursor:pointer;color:var(--danger);" data-del-cov="${c.id}">✕</span>` : ''}
-            </div>
+  if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增保障內容</div>`;
+  const groups = new Map();
+  list.forEach(c=>{ const k=c.source||'保障內容'; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(c); });
+  return [...groups.entries()].map(([src, items])=>`
+    <div class="card" style="margin-bottom:16px;">
+      <div class="cov-src">${esc(src)}</div>
+      ${items.map(c=>`
+        <div class="item-line">
+          <div class="label">${esc(covCleanLabel(c.category))}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="amount">${esc(covValueText(c.category, c.content))}</span>
+            ${editable ? `<span style="cursor:pointer;color:var(--ink-soft);" data-edit-cov="${c.id}">✎</span>
+            <span style="cursor:pointer;color:var(--danger);" data-del-cov="${c.id}">✕</span>` : ''}
           </div>
-        `).join('')}
+        </div>
       `).join('')}
     </div>
   `).join('');
@@ -1755,8 +1802,8 @@ function renderAdminClient(){
       ${state.coverage.length ? `
         ${(()=>{ const g=computeGaps(state.coverage,state.policies,state.ridersByPolicy); const m=g.items.filter(i=>!i.covered);
           return `<div class="section-title" style="margin-top:34px;">缺口檢視（${g.done}/${g.total}）</div><div class="card" style="padding:16px 18px;">${m.length?`<div class="hint" style="margin-bottom:8px;">目前沒看到：</div>`+m.map(x=>`<div style="margin:6px 0;font-weight:600;">${x.icon} ${esc(x.name)}</div>`).join(''):'六大類都有涵蓋 🎉'}</div>`; })()}
-        <div class="section-title" style="margin-top:34px;">保障總覽（全部保單加總）</div>
-        ${renderCoverageGrouped(state.coverage, false)}
+        <div class="section-title" style="margin-top:34px;">保障總和（全部保單加總）</div>
+        ${renderCoverageTotal(state.coverage)}
       ` : ''}
     </div>
     <button class="fab" id="add-policy">＋</button>
@@ -2267,8 +2314,8 @@ function renderClientHome(){
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
         state.policies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
       ${state.coverage.length ? `
-        <div class="section-title" style="margin-top:30px;">保障總覽</div>
-        ${renderCoverageGrouped(state.coverage, false)}` : ''}`;
+        <div class="section-title" style="margin-top:30px;">保障總和</div>
+        ${renderCoverageTotal(state.coverage)}` : ''}`;
   } else if(tab==='gap'){
     body = `
       <div class="section-title">保障缺口檢視</div>
