@@ -84,6 +84,8 @@ footer{text-align:center;font:400 11px var(--latin);color:var(--faint);letter-sp
 .live i{width:7px;height:7px;border-radius:50%;background:#4CC38A;box-shadow:0 0 0 3px rgba(76,195,138,.18);animation:pulse 2s infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(76,195,138,0)}}
 .live[hidden]{display:none}
+.bio{color:var(--muted);font-size:13px;line-height:2;margin:0}
+.bio b.em{color:var(--ink);font-weight:700}
 </style>
 </head>
 <body>
@@ -97,7 +99,7 @@ footer{text-align:center;font:400 11px var(--latin);color:var(--faint);letter-sp
       <span class="dot"></span>
     </div>
     <h1 class="name">蕎蕎<small>CIAO</small></h1>
-    <div class="role">高雄・保險經紀人業務</div>
+    <p class="bio">高雄的保險經紀人業務<br>每天幫大家把保單看懂，把薪水分好<br><b class="em">存錢不用很辛苦，先把順序排對就好</b></p>
     <div class="chips"><span>保單健檢</span><span>資產配置</span><span>房貸規劃</span></div>
     <div class="live" id="live" hidden><span><i></i><b id="liveOn">1</b> 人正在看</span><span>累積 <b id="liveVw">0</b> 次瀏覽</span></div>
   </section>
