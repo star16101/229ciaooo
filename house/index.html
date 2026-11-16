@@ -234,10 +234,12 @@ const fmt=n=>Math.round(n).toLocaleString("zh-TW");
 const big=n=>Math.abs(n)>=1e4?(n/1e4).toFixed(Math.abs(n)>=1e6?0:1)+" 萬":fmt(n);
 const num=el=>Math.max(0,parseFloat(String(el.value).replace(/[^\d.]/g,""))||0);
 const pmt=(P,r,y)=>{if(!P||!y)return 0;const m=r/100/12,n=y*12;return m?P*m/(1-Math.pow(1+m,-n)):P/n;};
-const SV=[["房子是？",["自住","出租","還在看房"]],["買多久了？","3 年內|3～10 年|10 年以上".split("|")],["每個月繳房貸的感覺？",["剛剛好","有點緊","很吃力"]],["有想做、但卡在錢的事嗎？",["裝修","小孩教育","還其他貸款","想要更多現金流","都還好"]]];
+const SV=[["你有幾間房子？",["1 間","2 間","3 間","4 間","5 間以上","還沒有"]],["目前的房子是？（可複選）",["自住","出租","空著","還在看房"],1],["買多久了？","3 年內|3～10 年|10 年以上".split("|")],["每個月繳房貸的感覺？",["剛剛好","有點緊","很吃力"]],["有想做、但卡在錢的事嗎？",["裝修","小孩教育","還其他貸款","想要更多現金流","都還好"]]];
 const sv={};
-function survey(){$("survey").innerHTML=SV.map((q,i)=>`<div class="q"><p>${q[0]}</p><div class="pills" role="group" aria-label="${q[0]}">${q[1].map(o=>`<button type="button" class="pill" data-s="${i}" data-o="${o}" aria-pressed="${sv[i]===o}">${o}</button>`).join("")}</div></div>`).join("");}
-$("survey").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sv[b.dataset.s]=b.dataset.o;survey();});
+const picked=(i,o)=>Array.isArray(sv[i])?sv[i].includes(o):sv[i]===o;
+function survey(){$("survey").innerHTML=SV.map((q,i)=>`<div class="q"><p>${q[0]}</p><div class="pills" role="group" aria-label="${q[0]}">${q[1].map(o=>`<button type="button" class="pill" data-s="${i}" data-o="${o}" aria-pressed="${picked(i,o)}">${o}</button>`).join("")}</div></div>`).join("");}
+$("survey").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.s,o=b.dataset.o;
+  if(SV[i][2]){const a=Array.isArray(sv[i])?sv[i]:[];sv[i]=a.includes(o)?a.filter(x=>x!==o):[...a,o];if(!sv[i].length)delete sv[i];}else sv[i]=o;survey();});
 const DB=[["信貸","500,000","7","5"],["車貸","300,000","4","4"],["信用卡分期","0","15","1"]];
 $("debts").innerHTML=DB.map((d,i)=>`<div class="drow"><h3>${d[0]}</h3><div class="row3">
 <div class="f"><label for="d${i}b">剩餘金額</label><div class="in"><input id="d${i}b" inputmode="numeric" value="${d[1]}"></div></div>
@@ -265,7 +267,7 @@ document.querySelectorAll("main input:not([type=range]):not(#nm):not(#ig):not(#c
 $("ny").addEventListener("input",calc);
 function buildText(){const r=calc(),v=id=>$(id).value.trim();
   const lines=["【房貸健檢｜我的結果】",`稱呼：${v("nm")||"（未填）"}`,`IG：@${v("ig").replace(/^@/,"")||"（未填）"}`,`房子位置：${v("city")||"（未填）"}`,
-   ...SV.map((q,i)=>`${q[0]} ${sv[i]||"未答"}`),
+   ...SV.map((q,i)=>`${q[0]} ${Array.isArray(sv[i])?sv[i].join("、"):(sv[i]||"未答")}`),
    `房貸：剩 ${fmt(r.mb)} 元，利率 ${r.mr}%，剩 ${r.my} 年，每月約 ${fmt(r.mp)} 元`,
    ...DB.map((d,i)=>num($("d"+i+"b"))?`${d[0]}：剩 ${$("d"+i+"b").value} 元，利率 ${$("d"+i+"r").value}%，剩 ${$("d"+i+"y").value} 年`:"").filter(Boolean),
    `每月還款合計約 ${fmt(r.all)} 元，占家庭收入 ${r.inc?Math.round(r.ratio*100)+"%":"（未填收入）"}`,
