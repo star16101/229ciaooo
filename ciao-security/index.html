@@ -859,14 +859,14 @@ function parseMultiPolicyText(text){
 }
 
 const COVERAGE_PHASE_ORDER = ['醫療前期','醫療中期','醫療後期','身價'];
-const COVERAGE_SUBGROUPS = ['🌟一次金','🏥醫療','⚡️意外','☂️長照','👼🏻身價'];
+const COVERAGE_SUBGROUPS = ['🌟一次金','🏥醫療','⚡️意外','🌿長照','👼🏻身價'];
 const COVERAGE_RULES = [
   ['醫療前期','🌟一次金', ['輕度癌症','重度癌症','特定癌症','癌症罹患金','初次罹癌','重大傷病','重大疾病','特定傷病','一次金','罹患金']],
   ['醫療前期','🏥醫療', ['病房費','住院補貼','住院雜費','住院特定手術','門診特定手術','癌症手術','癌症住院']],
   ['醫療中期','⚡️意外', ['意外實支實付','意外住院','意外骨折','意外醫療','意外傷害醫療']],
   ['醫療中期','🏥醫療', ['雜費實支實付','實支住院日額','實支住院手術','實支門診手術','定額住院日額','住院手術','門診手術','轉換病房日額','住院日額','實支實付','住院醫療','手術']],
   ['醫療後期','⚡️意外', ['意外失能金','意外失能月給付','意外失能']],
-  ['醫療後期','☂️長照', ['長照失能一次金','長照失能扶助給付','長照','失能扶助','給付幾年','給付年期']],
+  ['醫療後期','🌿長照', ['長照失能一次金','長照失能扶助給付','長照','失能扶助','給付幾年','給付年期']],
   ['身價','👼🏻身價', ['一般身故','癌症身故','意外身故','身故']],
 ];
 function classifyCoverageItem(label){
@@ -974,7 +974,7 @@ function groupCoverage(list){
   const seenOrder = [];
   list.forEach(item=>{
     const phase = item.phase || '其他';
-    const subgroup = item.subgroup || '';
+    const subgroup = (item.subgroup || '').replace('☂️','🌿');
     if(!groups[phase]){ groups[phase] = {}; seenOrder.push(phase); }
     if(!groups[phase][subgroup]) groups[phase][subgroup] = [];
     groups[phase][subgroup].push(item);
@@ -1003,7 +1003,7 @@ const GAP_ITEMS = [
   { id:'acc', icon:'⚡️', name:'意外保障', short:'意外',
     test:t=>/意外/.test(t),
     tip:'包含意外身故、失能與意外醫療，補突發事故造成的支出與收入損失。' },
-  { id:'ltc', icon:'☂️', name:'長照／失能扶助', short:'長照',
+  { id:'ltc', icon:'🌿', name:'長照／失能扶助', short:'長照',
     test:t=>/長照|長期照顧|失能扶助|失能一次金|失能月給付/.test(t),
     tip:'失能或需要長期照顧時，提供照護費用的現金給付。' },
   { id:'life', icon:'👼🏻', name:'身價／壽險', short:'身價',
@@ -1047,7 +1047,7 @@ function openGamesMenu(){
     <div class="modal-title">互動小遊戲</div>
     <div class="game-menu">
       <div class="game-tile" data-game="memory"><div class="g-ico">🃏</div><div class="g-name">保障翻翻樂</div><div class="g-desc">找出相同的圖案</div></div>
-      <div class="game-tile" data-game="catch"><div class="g-ico">☂️</div><div class="g-name">接住保障傘</div><div class="g-desc">接傘，閃開閃電</div></div>
+      <div class="game-tile" data-game="catch"><div class="g-ico">🍀</div><div class="g-name">接住幸運草</div><div class="g-desc">接草，閃開閃電</div></div>
       <div class="game-tile" data-game="fortune"><div class="g-ico">🎐</div><div class="g-name">今日小籤</div><div class="g-desc">每天一支</div></div>
     </div>`);
   document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>{
@@ -1056,7 +1056,7 @@ function openGamesMenu(){
   });
 }
 function openMemoryGame(){
-  const icons=['🌟','🏥','⚡️','☂️','🛡️','🏝️'];
+  const icons=['🌟','🏥','⚡️','🌿','🛡️','🏝️'];
   const deck=[...icons,...icons].map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(x=>x.v);
   let open=[], matched=new Set(), moves=0, lock=false;
   renderModal(`
@@ -1090,8 +1090,8 @@ function openMemoryGame(){
 }
 function openCatchGame(){
   renderModal(`
-    <div class="modal-title">接住保障傘</div>
-    <div class="hint" style="margin:-8px 0 12px;">手指左右滑動，用小島接住 ☂️，閃開 ⚡️。共 3 條命，30 秒。</div>
+    <div class="modal-title">接住幸運草</div>
+    <div class="hint" style="margin:-8px 0 12px;">手指左右滑動，用小島接住 🍀，閃開 ⚡️。共 3 條命，30 秒。</div>
     <div class="catch-area" id="catch">
       <div class="catch-hud"><span id="c-score">得分 0</span><span id="c-life">❤️❤️❤️</span><span id="c-time">30</span></div>
       <div class="catcher" id="catcher">🏝️</div>
@@ -1119,7 +1119,7 @@ function openCatchGame(){
     if(spawn<=0){
       spawn=520+Math.random()*420;
       const bad=Math.random()<0.32;
-      const el=document.createElement('div'); el.className='fall'; el.textContent=bad?'⚡️':'☂️';
+      const el=document.createElement('div'); el.className='fall'; el.textContent=bad?'⚡️':'🍀';
       const x=0.08+Math.random()*0.84; el.style.left=(x*100)+'%'; area.appendChild(el);
       items.push({el,x,y:-30,bad,v:0.11+Math.random()*0.07});
     }
@@ -2277,7 +2277,7 @@ function renderClientHome(){
       <div class="section-title">互動小遊戲</div>
       <div class="game-menu">
         <div class="game-tile" data-game="memory"><div class="g-ico">🃏</div><div class="g-name">保障翻翻樂</div><div class="g-desc">找出相同的圖案</div></div>
-        <div class="game-tile" data-game="catch"><div class="g-ico">☂️</div><div class="g-name">接住保障傘</div><div class="g-desc">接傘，閃開閃電</div></div>
+        <div class="game-tile" data-game="catch"><div class="g-ico">🍀</div><div class="g-name">接住幸運草</div><div class="g-desc">接草，閃開閃電</div></div>
         <div class="game-tile" data-game="fortune"><div class="g-ico">🎐</div><div class="g-name">今日小籤</div><div class="g-desc">每天一支</div></div>
       </div>`;
   }
