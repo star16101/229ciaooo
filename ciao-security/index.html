@@ -587,6 +587,24 @@
   .item-line .label{color:var(--ink);font-size:14px;flex:1;min-width:0;}
   .item-line .amount{font-weight:700;color:var(--ink);font-size:14px;text-align:right;white-space:nowrap;}
   .total-card{padding:18px 20px!important;}
+
+  /* round 6 */
+  .chip-row{display:flex;gap:12px;overflow-x:auto;padding:6px 4px 16px;margin:0 -4px 4px;scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{flex:none;border:0;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--ink-soft);background:var(--bg);box-shadow:var(--raise-sm);cursor:pointer;white-space:nowrap;font-family:inherit;}
+  .chip.active{color:var(--accent-ink);box-shadow:var(--press);}
+  .promo-card{display:flex;align-items:center;gap:14px;margin-top:22px;padding:16px 18px;border-radius:30px;background:var(--bg);box-shadow:var(--raise);text-decoration:none;color:var(--ink);}
+  .promo-card:active{box-shadow:var(--press);}
+  .promo-ico{width:52px;height:52px;border-radius:50%;box-shadow:var(--press);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;}
+  .promo-txt{flex:1;min-width:0;} .promo-t{font-weight:700;font-size:16px;} .promo-s{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+  .ref-cta{position:relative;display:flex;align-items:center;gap:14px;margin:22px 0 4px;padding:18px 18px;border-radius:32px;background:var(--grad);color:#fff;cursor:pointer;overflow:hidden;box-shadow:8px 8px 18px rgba(214,150,40,.45),-7px -7px 16px #fff;}
+  .ref-cta::after{content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:rotate(20deg);animation:ctaShine 4.2s ease-in-out infinite;}
+  @keyframes ctaShine{0%,55%{left:-60%}100%{left:130%}}
+  .ref-cta:active{box-shadow:inset 5px 5px 12px rgba(170,100,10,.5),inset -4px -4px 10px rgba(255,220,130,.6);}
+  .rc-ico{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;box-shadow:inset 3px 3px 7px rgba(190,110,10,.35),inset -3px -3px 7px rgba(255,235,170,.7);}
+  .rc-txt{flex:1;min-width:0;} .rc-t{font-weight:700;font-size:16px;text-shadow:0 1px 2px rgba(150,80,0,.3);} .rc-s{font-size:12px;margin-top:4px;opacity:.95;letter-spacing:.04em;}
+  .rc-go{flex:none;background:#fff;color:var(--accent-ink);font-weight:700;font-size:13px;padding:9px 14px;border-radius:999px;box-shadow:3px 3px 8px rgba(170,100,10,.35);}
+  @media (prefers-reduced-motion:reduce){.ref-cta::after{animation:none}}
 </style>
 </head>
 <body>
@@ -1220,7 +1238,8 @@ function covIsNonLump(cat){
 function covValueText(cat, content){
   const v=String(content||'').trim(); if(!v) return '';
   const unit=covUnitSuffix(cat, v);
-  if(covIsNonLump(cat) && !/^最高/.test(v)) return `最高 ${v}${unit}`;
+  const fixedDaily = /日額/.test(cat) && !/實支/.test(cat);
+  if(covIsNonLump(cat) && !fixedDaily && !/^最高/.test(v)) return `最高 ${v}${unit}`;
   return v+unit;
 }
 function covFormatWan(content){
@@ -1239,7 +1258,7 @@ function renderCoverageTotal(list){
   merged.sort((a,b)=>covRank(a.category)-covRank(b.category));
   return `<div class="card total-card">
     ${merged.map(m=>`<div class="item-line"><div class="label">${esc(m.category)}</div><span class="amount">${esc(covValueText(origByLabel[m.category]||m.category, m.content))}</span></div>`).join('')}
-    <div class="hint" style="margin-top:12px;line-height:1.7;">「最高」表示非一次性給付（如日額、實支實付、手術），依實際住院或醫療狀況給付，以此為上限。</div>
+    <div class="hint" style="margin-top:12px;line-height:1.7;">「最高」表示非一次性給付（如實支實付、手術、醫療限額），依實際住院或醫療狀況給付，以此為上限。</div>
   </div>`;
 }
 function renderCoverageGrouped(list, editable){
@@ -2306,16 +2325,23 @@ function renderClientHome(){
   const gaps = computeGaps(state.coverage, state.policies, state.ridersByPolicy);
   const missing = gaps.items.filter(i=>!i.covered);
   const tab = state.clientTab || 'policies';
+  const insurers = [...new Set(state.policies.map(p=>p.insurer).filter(Boolean))];
+  if(state.insurerFilter && !insurers.includes(state.insurerFilter)) state.insurerFilter='';
+  const flt = state.insurerFilter || '';
+  const shownPolicies = flt ? state.policies.filter(p=>p.insurer===flt) : state.policies;
+  const shownIds = new Set(shownPolicies.map(p=>p.id));
+  const shownCoverage = flt ? state.coverage.filter(c=>shownIds.has(c.policy_id)) : state.coverage;
   const hasData = state.policies.length>0 || state.coverage.length>0;
   let body = '';
   if(tab==='policies'){
     body = `
       <div class="section-title">保單列表</div>
+      ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
-        state.policies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
-      ${state.coverage.length ? `
-        <div class="section-title" style="margin-top:30px;">保障總和</div>
-        ${renderCoverageTotal(state.coverage)}` : ''}`;
+        shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
+      ${shownCoverage.length ? `
+        <div class="section-title" style="margin-top:30px;">保障總和${flt?`・${esc(flt)}`:''}</div>
+        ${renderCoverageTotal(shownCoverage)}` : ''}`;
   } else if(tab==='gap'){
     body = `
       <div class="section-title">保障缺口檢視</div>
@@ -2334,7 +2360,12 @@ function renderClientHome(){
             <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">請業務聯絡我，協助補強</button>`
           : `<div class="gd-title">六大類保障目前都有涵蓋 🎉</div><div class="gd-tip">保障內容也會隨著生活改變，有任何想法都可以留言給業務。</div>`}
         </div>
-        <div class="hint" style="margin-top:12px;line-height:1.7;">此檢視依已建檔的保障項目做初步比對，僅供參考，不代表保障是否足夠。實際需求與額度請與業務討論。</div>`}`;
+        <div class="hint" style="margin-top:12px;line-height:1.7;">此檢視依已建檔的保障項目做初步比對，僅供參考，不代表保障是否足夠。實際需求與額度請與業務討論。</div>`}
+      <a class="promo-card" href="https://229ciaooo.pages.dev/house" target="_blank" rel="noopener">
+        <div class="promo-ico">🏠</div>
+        <div class="promo-txt"><div class="promo-t">你有房子嗎？</div><div class="promo-s">如何輕鬆繳房貸</div></div>
+        <div class="chev">›</div>
+      </a>`;
   } else {
     body = `
       <div class="section-title">互動小遊戲</div>
@@ -2358,10 +2389,14 @@ function renderClientHome(){
           <div class="hs-line">涵蓋 ${gaps.done} / ${gaps.total} 類</div>
           <div class="hs-btns">
             <button class="mini-btn" id="open-message">留言</button>
-            <button class="mini-btn" id="open-referral">推薦</button>
             <button class="mini-btn" id="open-games">遊戲</button>
           </div>
         </div>
+      </div>
+      <div class="ref-cta" id="open-referral">
+        <div class="rc-ico">🤝</div>
+        <div class="rc-txt"><div class="rc-t">覺得好用？推薦給朋友</div><div class="rc-s">讓你的錢幫你賺錢・輕鬆理財</div></div>
+        <div class="rc-go">推薦 ›</div>
       </div>
       <div class="tabs">
         <div class="tab ${tab==='policies'?'active':''}" data-ctab="policies">保單</div>
@@ -2374,6 +2409,7 @@ function renderClientHome(){
   document.getElementById('open-message').onclick = openMessageModal;
   document.getElementById('open-referral').onclick = openReferralShareModal;
   document.getElementById('open-games').onclick = openGamesMenu;
+  app.querySelectorAll('[data-ins]').forEach(el=>el.onclick=()=>{ state.insurerFilter=el.dataset.ins; render(); });
   app.querySelectorAll('[data-ctab]').forEach(el=>el.onclick=()=>{ state.clientTab=el.dataset.ctab; render(); window.scrollTo(0,0); });
   app.querySelectorAll('[data-detail]').forEach(el=>{
     el.onclick = ()=>{ state.activePolicyId = el.dataset.detail; state.view = 'client-policy'; render(); };
@@ -2481,11 +2517,20 @@ function openReferralShareModal(){
       您的推薦連結
       <div class="invite-code" style="font-size:14px;word-break:break-all;">${esc(link)}</div>
     </div>
-    <button class="btn btn-primary" id="ref-copy" style="margin-top:14px;">複製連結</button>
+    <button class="btn btn-primary" id="ref-copy" style="margin-top:14px;">複製推薦連結</button>
+    <div class="invite-box" style="margin-top:22px;">
+      讓你的錢幫你賺錢・輕鬆理財
+      <div class="invite-code" style="font-size:14px;word-break:break-all;">https://229ciaooo.pages.dev</div>
+    </div>
+    <button class="btn btn-secondary" id="ref-copy2" style="margin-top:14px;">複製這個網站連結</button>
     <button class="btn btn-secondary" id="ref-close" style="margin-top:10px;">關閉</button>
   `);
   document.getElementById('ref-copy').onclick = async ()=>{
     try{ await navigator.clipboard.writeText(link); setMsg('ok','已複製連結'); }catch(e){ setMsg('error','複製失敗，請手動選取文字複製'); }
+  };
+  document.getElementById('ref-copy2').onclick = async ()=>{
+    const t='讓你的錢幫你賺錢，輕鬆理財\nhttps://229ciaooo.pages.dev';
+    try{ await navigator.clipboard.writeText(t); setMsg('ok','已複製'); }catch(e){ setMsg('error','複製失敗，請手動選取文字複製'); }
   };
   document.getElementById('ref-close').onclick = closeModal;
 }
