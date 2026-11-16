@@ -646,6 +646,9 @@
   .inv-copy:active{box-shadow:var(--press);}
   .invite-box{color:var(--ink-soft)!important;line-height:1.7;}
   .policy-card .name{font-size:15px!important;line-height:1.4;letter-spacing:0!important;}
+  .cov-group{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.25em;color:var(--accent-ink);margin:18px 0 2px;}
+  .cov-group:first-child{margin-top:4px;}
+  .cov-group-bar{width:18px;height:5px;border-radius:99px;background:var(--grad);display:inline-block;}
 </style>
 </head>
 <body>
@@ -1311,8 +1314,19 @@ function renderCoverageTotal(list){
   // 同名但原始標示不同（例如日額、每月）要保留單位判斷：以原始分類的第一筆為準
   const origByLabel = {}; prepared.forEach(p=>{ if(!origByLabel[p.category]) origByLabel[p.category]=p._orig; });
   merged.sort((a,b)=>covRank(a.category)-covRank(b.category));
+  const GROUPS=[
+    ['一次金', /重大傷病|重大疾病|癌症罹患|輕度癌症|重度癌症|^重大燒燙傷/],
+    ['醫療',   /癌症|住院|病房|手術|雜費|門診|補貼|轉換/],
+    ['意外',   /意外|骨折/],
+    ['長照／失能', /長照|失能|扶助/],
+    ['壽險',   /身故/],
+  ];
+  const groupOf = label => { if(/長照|失能|扶助/.test(label)) return '長照／失能'; if(/身故/.test(label)) return /^意外/.test(label)?'意外':'壽險'; if(GROUPS[0][1].test(label)) return '一次金'; if(/^意外|骨折/.test(label)) return '意外'; if(GROUPS[1][1].test(label)) return '醫療'; return '其他'; };
+  const buckets = new Map(GROUPS.map(g=>[g[0],[]])); buckets.set('其他',[]);
+  merged.forEach(m=>buckets.get(groupOf(m.category)).push(m));
+  const line = m=>`<div class="item-line"><div class="label">${esc(m.category)}</div><span class="amount">${esc(covValueText(origByLabel[m.category]||m.category, m.content))}</span></div>`;
   return `<div class="card total-card">
-    ${merged.map(m=>`<div class="item-line"><div class="label">${esc(m.category)}</div><span class="amount">${esc(covValueText(origByLabel[m.category]||m.category, m.content))}</span></div>`).join('')}
+    ${[...buckets.entries()].filter(([,arr])=>arr.length).map(([g,arr])=>`<div class="cov-group"><span class="cov-group-bar"></span>${g}</div>${arr.map(line).join('')}`).join('')}
     <div class="hint" style="margin-top:12px;line-height:1.7;">「最高」表示非一次性給付（如實支實付、手術、醫療限額），依實際住院或醫療狀況給付，以此為上限。</div>
   </div>`;
 }
