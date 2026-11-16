@@ -71,13 +71,19 @@ main{max-width:440px;margin:0 auto;padding:22px 22px 48px;display:flex;flex-dire
 .tile .ico svg{width:20px;height:20px}
 .tile b{font-weight:500;font-size:13.5px;line-height:1.5}
 .tile small{font-size:11.5px;color:var(--muted);line-height:1.6}
-.tile.soon{box-shadow:var(--press);justify-content:center;align-items:center;text-align:center;color:var(--faint)}
+.tile.soon{grid-column:1/-1;min-height:96px;box-shadow:var(--press);justify-content:center;align-items:center;text-align:center;color:var(--faint)}
 
 .quote{display:flex;gap:14px;align-items:center;padding:18px;border-radius:22px;box-shadow:var(--raise)}
 .quote q{font:600 40px/0.6 var(--latin);color:var(--gold);quotes:"“" "";}
 .quote p{margin:0;font-size:13px;color:var(--muted);line-height:1.9}
 footer{text-align:center;font:400 11px var(--latin);color:var(--faint);letter-spacing:.1em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.live{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.live span{padding:5px 12px;border-radius:99px;box-shadow:var(--press);display:inline-flex;align-items:center;gap:6px}
+.live b{font:600 12px var(--latin);color:var(--ink)}
+.live i{width:7px;height:7px;border-radius:50%;background:#4CC38A;box-shadow:0 0 0 3px rgba(76,195,138,.18);animation:pulse 2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(76,195,138,0)}}
+.live[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -92,15 +98,12 @@ footer{text-align:center;font:400 11px var(--latin);color:var(--faint);letter-sp
     </div>
     <h1 class="name">蕎蕎<small>CIAO</small></h1>
     <div class="role">高雄・保險經紀人業務</div>
-    <p class="bio">每天幫大家把保單看懂<br>把薪水分好<br>存錢不用很辛苦，先把順序排對就好</p>
     <div class="chips"><span>保單健檢</span><span>資產配置</span><span>房貸規劃</span></div>
+    <div class="live" id="live" hidden><span><i></i><b id="liveOn">1</b> 人正在看</span><span>累積 <b id="liveVw">0</b> 次瀏覽</span></div>
   </section>
 
   <div class="sec"><h2>我的小工具</h2><span>tools</span></div>
   <nav class="links" id="tools" aria-label="小工具"></nav>
-
-  <div class="sec"><h2>找我聊聊</h2><span>contact</span></div>
-  <nav class="links" id="contact" aria-label="聯絡"></nav>
 
   <div class="sec"><h2>作品</h2><span>works</span></div>
   <div class="grid" id="works"></div>
@@ -115,13 +118,7 @@ const TOOLS=[
   {icon:"calc", t:"小資抗通膨資產配置計算機", s:"3 分鐘算出你的 631 配置和預備金", href:"/calc/", tag:"HOT", hot:true},
   {icon:"house",t:"原來繳房貸可以越繳越輕鬆", s:"房貸健檢，看看每個月還能多喘口氣", href:"/house/"}
 ];
-const CONTACT=[
-  {icon:"shield",t:"免費保單健檢", s:"保單拍照私訊我，幫你整理保障缺口", href:"https://ig.me/m/229ciaooo"},
-  {icon:"ig",   t:"Instagram", s:"@229ciaooo", href:"https://www.instagram.com/229ciaooo/"}
-];
 const WORKS=[
-  {icon:"calc", t:"資產配置計算機", s:"631 薪水分配、定期定額試算", href:"/calc/"},
-  {icon:"house",t:"房貸健檢", s:"每月還款壓力一次看清楚", href:"/house/"},
   {soon:true}
 ];
 /* ====================================== */
@@ -135,8 +132,20 @@ const svg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]||""}</svg>`
 const ext=h=>/^https?:/.test(h)?' target="_blank" rel="noopener"':'';
 const card=l=>`<a class="card${l.hot?" hot":""}" href="${l.href}"${ext(l.href)}><span class="ico">${svg(l.icon)}</span><span><span class="t">${l.t}${l.tag?`<em>${l.tag}</em>`:""}</span><span class="s">${l.s}</span></span><svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>`;
 document.getElementById("tools").innerHTML=TOOLS.map(card).join("");
-document.getElementById("contact").innerHTML=CONTACT.map(card).join("");
 document.getElementById("works").innerHTML=WORKS.map(w=>w.soon?`<div class="tile soon"><small>更多作品<br>整理中</small></div>`:`<a class="tile" href="${w.href}"${ext(w.href)}><span class="ico">${svg(w.icon)}</span><b>${w.t}</b><small>${w.s}</small></a>`).join("");
+</script>
+<script>
+(()=>{const P="hub",U="https://zefgdogfbfiqyvxdcnvs.supabase.co/rest/v1/rpc/",K="sb_publishable_DUd4I3iTYi165too1Go3Ww_QGTJtX7z";
+const box=document.getElementById("live"),on=document.getElementById("liveOn"),vw=document.getElementById("liveVw");if(!box)return;
+const uid=()=>(self.crypto&&crypto.randomUUID)?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16));
+let sid;try{sid=localStorage.getItem("ig_sid");if(!sid){sid=uid();localStorage.setItem("ig_sid",sid);}}catch(e){sid=uid();}
+const rpc=(f,b)=>fetch(U+f,{method:"POST",headers:{apikey:K,"Content-Type":"application/json"},body:JSON.stringify(b)}).then(r=>r.ok?r.json():null).catch(()=>null);
+const show=d=>{if(!d||typeof d!=="object")return;on.textContent=Math.max(1,d.online|0);vw.textContent=Number(d.views||0).toLocaleString("zh-TW");box.hidden=false;};
+const ping=()=>rpc("ig_ping",{p:P,s:sid}).then(show);
+let done=false;try{done=!!sessionStorage.getItem("ig_hit_"+P);}catch(e){}
+(done?Promise.resolve():rpc("ig_hit",{p:P}).then(()=>{try{sessionStorage.setItem("ig_hit_"+P,"1");}catch(e){}})).then(ping);
+setInterval(()=>{if(!document.hidden)ping();},25000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping();});})();
 </script>
 </body>
 </html>

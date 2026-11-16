@@ -128,6 +128,12 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 .fact .assume{font-size:.68rem;color:var(--muted);opacity:.8}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .shy{font-size:.84rem;color:var(--ink);background:var(--soft);border-radius:12px;padding:10px 14px}
+.live{display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:var(--muted);padding-top:18px}
+.live span{padding:3px 12px;border-radius:99px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;background:var(--bg)}
+.live b{font-weight:500;color:var(--ink)}
+.live i{width:6px;height:6px;border-radius:50%;background:#3FAF7A;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.live[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -135,6 +141,7 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:.7rem;color:v
 <main>
 
 <div class="hero">
+  <div class="live" id="live" hidden><span><i></i><b id="liveOn">1</b> 人正在看</span><span>累積 <b id="liveVw">0</b> 次瀏覽</span></div>
   <span class="eyebrow">Money Notes · 2026</span>
   <h1>小資抗通膨<br>資產配置計算機</h1>
   <div class="me">
@@ -341,6 +348,19 @@ async function submitLead(page,text,extra){
 }
 $("lead").addEventListener("submit",e=>{e.preventDefault();const {text,data}=buildCalc();submitLead("calc",text,{age:$("age").value.trim().slice(0,10),data});});
 step1();step2();quiz();
+</script>
+<script>
+(()=>{const P="calc",U="https://zefgdogfbfiqyvxdcnvs.supabase.co/rest/v1/rpc/",K="sb_publishable_DUd4I3iTYi165too1Go3Ww_QGTJtX7z";
+const box=document.getElementById("live"),on=document.getElementById("liveOn"),vw=document.getElementById("liveVw");if(!box)return;
+const uid=()=>(self.crypto&&crypto.randomUUID)?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16));
+let sid;try{sid=localStorage.getItem("ig_sid");if(!sid){sid=uid();localStorage.setItem("ig_sid",sid);}}catch(e){sid=uid();}
+const rpc=(f,b)=>fetch(U+f,{method:"POST",headers:{apikey:K,"Content-Type":"application/json"},body:JSON.stringify(b)}).then(r=>r.ok?r.json():null).catch(()=>null);
+const show=d=>{if(!d||typeof d!=="object")return;on.textContent=Math.max(1,d.online|0);vw.textContent=Number(d.views||0).toLocaleString("zh-TW");box.hidden=false;};
+const ping=()=>rpc("ig_ping",{p:P,s:sid}).then(show);
+let done=false;try{done=!!sessionStorage.getItem("ig_hit_"+P);}catch(e){}
+(done?Promise.resolve():rpc("ig_hit",{p:P}).then(()=>{try{sessionStorage.setItem("ig_hit_"+P,"1");}catch(e){}})).then(ping);
+setInterval(()=>{if(!document.hidden)ping();},25000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping();});})();
 </script>
 </body>
 </html>
