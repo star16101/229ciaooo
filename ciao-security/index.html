@@ -1340,7 +1340,7 @@ function renderCoverageTotal(list){
     ['長照／失能', /長照|失能|扶助/],
     ['壽險',   /身故/],
   ];
-  const groupOf = label => { if(/長照|失能|扶助/.test(label)) return '長照／失能'; if(/身故/.test(label)) return /^意外/.test(label)?'意外':'壽險'; if(/重大傷病|輕度癌症|重度癌症|癌症罹患/.test(label)) return '一次金'; if(/癌症/.test(label)) return '癌症'; if(GROUPS[0][1].test(label)) return '一次金'; if(/^意外|骨折/.test(label)) return '意外'; if(GROUPS[2][1].test(label)) return '醫療'; return '其他'; };
+  const groupOf = label => { if(/長照|失能|扶助/.test(label)) return '長照／失能'; if(/身故/.test(label)) return /^意外/.test(label)?'意外':'壽險'; if(/重大傷病|輕度癌症|重度癌症|特定癌症|癌症罹患/.test(label)) return '一次金'; if(/癌症/.test(label)) return '癌症'; if(GROUPS[0][1].test(label)) return '一次金'; if(/^意外|骨折/.test(label)) return '意外'; if(GROUPS[2][1].test(label)) return '醫療'; return '其他'; };
   const buckets = new Map(GROUPS.map(g=>[g[0],[]])); buckets.set('其他',[]);
   merged.forEach(m=>buckets.get(groupOf(m.category)).push(m));
   const line = m=>`<div class="item-line"><div class="label">${esc(m.category)}</div><span class="amount">${esc(covValueText(origByLabel[m.category]||m.category, m.content))}</span></div>`;
