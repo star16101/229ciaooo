@@ -625,6 +625,19 @@
   .sn-head{font-size:12px;font-weight:700;color:var(--ink-soft);letter-spacing:.15em;margin:18px 6px 10px;display:flex;align-items:baseline;gap:8px;}
   .sn-head span{font-size:10px;font-weight:500;letter-spacing:.08em;opacity:.85;}
   .chip small{font-size:9px;opacity:.7;margin-left:4px;font-weight:500;}
+
+  /* family */
+  .fam-row{margin:14px 0 4px;}
+  .fam-lab{font-size:11px;color:var(--ink-soft);letter-spacing:.2em;margin:0 4px 8px;}
+  .fam-row .chip small{display:inline-block;margin-left:5px;font-size:10px;opacity:.7;}
+  .fam-card{padding:16px 18px;margin-bottom:18px;}
+  .fam-head{display:flex;align-items:center;justify-content:space-between;}
+  .fam-title{font-weight:600;font-size:14px;}
+  .fam-item{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-top:8px;border-radius:999px;background:var(--bg);box-shadow:var(--press);}
+  .fam-rel{font-size:11px;padding:3px 10px;border-radius:999px;background:var(--grad);color:#fff;flex:none;}
+  .fam-name{flex:1;font-size:14px;}
+  .fam-del{border:0;background:transparent;color:var(--ink-soft);font-size:13px;padding:4px 8px;cursor:pointer;border-radius:999px;}
+  .fam-del.sure{color:#fff;background:#d9534f;}
 </style>
 </head>
 <body>
@@ -756,7 +769,20 @@ async function loadClientPolicies(clientId){
   state.coverage = coverage || [];
 }
 
+const FAMILY_RELATIONS = ['伴侶','爸爸','媽媽','爺爺','奶奶','兒子','女兒','哥哥','姊姊','弟弟','妹妹','手足'];
+async function loadFamily(clientId){
+  const { data } = await sb.from('ins_family_links').select('id, relation, related_id, related:ins_clients!ins_family_links_related_id_fkey(id,name)').eq('client_id', clientId).order('created_at');
+  return (data||[]).filter(r=>r.related);
+}
+async function switchViewing(id){
+  state.viewingId = (id && id!==state.activeClientId) ? id : null;
+  state.clientTab = 'policies'; state.insurerFilter = '';
+  await loadClientPolicies(state.viewingId || state.activeClientId);
+  render(); window.scrollTo(0,0);
+}
 async function loadClientHomeData(){
+  state.viewingId = null;
+  state.family = await loadFamily(state.activeClientId);
   await loadClientPolicies(state.activeClientId);
   const { data: myClient } = await sb.from('ins_clients').select('name, referral_code').eq('id', state.activeClientId).single();
   state.myClient = myClient || null;
@@ -1094,7 +1120,8 @@ function ringSvg(pct){
 async function sendGapMessage(missing, btn){
   if(!missing.length) return;
   btn.disabled = true; btn.textContent = '送出中…';
-  const content = `【缺口諮詢】我想了解這幾項保障的補強方式：${missing.map(m=>m.name).join('、')}。方便時請與我聯絡，謝謝！`;
+  const _who = state.viewingId ? ((state.family||[]).find(f=>f.related_id===state.viewingId)||{}).related : null;
+  const content = `【缺口諮詢】${_who?`（關於家人 ${_who.name}）`:''}我想了解這幾項保障的補強方式：${missing.map(m=>m.name).join('、')}。方便時請與我聯絡，謝謝！`;
   const { error } = await sb.from('ins_messages').insert({ client_id: state.activeClientId, content });
   if(error){ btn.disabled=false; btn.textContent='送出失敗，請再試一次'; return; }
   const { data } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at',{ascending:false});
@@ -1573,6 +1600,7 @@ function renderAdminHome(){
       state.activeClientId = c.id;
       state.activeClientName = c.name;
       await loadClientPolicies(c.id);
+      state.adminFamily = await loadFamily(c.id);
       state.view = 'admin-client';
       render();
     };
@@ -1845,6 +1873,12 @@ function renderAdminClient(){
       <div class="hint" style="margin-bottom:18px;">${state.policies.length} 張保單</div>
       ${msgHtml()}
 
+      <div class="card fam-card">
+        <div class="fam-head"><div class="fam-title">👨‍👩‍👧 家人關係</div><button class="btn btn-secondary btn-sm" id="fam-add">＋ 新增</button></div>
+        <div class="hint" style="margin:2px 0 10px;">客戶登入後，可以切換查看下列家人的保單</div>
+        ${(state.adminFamily||[]).length ? (state.adminFamily).map(f=>`<div class="fam-item"><span class="fam-rel">${esc(f.relation)}</span><span class="fam-name">${esc(f.related.name)}</span><button class="fam-del" data-fam-del="${f.id}" aria-label="移除">✕</button></div>`).join('') : '<div class="hint">尚未設定家人</div>'}
+      </div>
+
       <div class="paste-box">
         <div style="font-weight:600;font-size:14px;margin-bottom:8px;">📋 一鍵貼上文字自動解析</div>
         <div class="hint" style="margin-bottom:10px;">一張保單（主約＋附約）一次貼上，整段直接貼上即可：每個民國日期（如 090/03/22）為一張保單，自動帶入保險公司、主約、附約，以及各商品下方的保障項目（保險種類、保障期間、保費、保證續保會自動略過）</div>
@@ -1877,6 +1911,12 @@ function renderAdminClient(){
     showInviteCode(c || {name: state.activeClientName, invite_code: '（請於客戶名單重新查看）'});
   };
   document.getElementById('add-policy').onclick = ()=>openPolicyForm(null);
+  document.getElementById('fam-add').onclick = openAddFamilyModal;
+  app.querySelectorAll('[data-fam-del]').forEach(el=>el.onclick=async()=>{
+    if(el.dataset.confirm!=='1'){ el.dataset.confirm='1'; el.textContent='確定移除？'; el.classList.add('sure'); setTimeout(()=>{ if(el.isConnected){ el.dataset.confirm=''; el.textContent='✕'; el.classList.remove('sure'); } },3000); return; }
+    await sb.from('ins_family_links').delete().eq('id', el.dataset.famDel);
+    state.adminFamily = await loadFamily(state.activeClientId); render();
+  });
   document.getElementById('paste-parse').onclick = ()=>{
     const txt = document.getElementById('paste-area').value;
     if(!txt.trim()) return;
@@ -1900,6 +1940,27 @@ function renderAdminClient(){
   });
   bindParsedBatchEvents();
   bindParsedMultiBatchEvents();
+}
+
+function openAddFamilyModal(){
+  const taken = new Set((state.adminFamily||[]).map(f=>f.related_id));
+  const opts = state.clients.filter(c=>c.id!==state.activeClientId && !taken.has(c.id)).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant-TW'));
+  if(!opts.length){ setMsg('error','沒有可以新增的客戶，請先到客戶名單建立家人'); return; }
+  renderModal(`
+    <div class="modal-title">新增家人</div>
+    <div class="hint" style="margin-bottom:12px;">${esc(state.activeClientName)} 可以查看這位家人的保單</div>
+    <div class="field"><label>家人（需已建立為客戶）</label><select id="fm-who">${opts.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>對 ${esc(state.activeClientName)} 來說，他是</label><select id="fm-rel">${FAMILY_RELATIONS.map(r=>`<option>${r}</option>`).join('')}</select></div>
+    <div class="btn-row"><button class="btn btn-secondary" id="fm-cancel">取消</button><button class="btn btn-primary" id="fm-save">儲存</button></div>
+  `);
+  document.getElementById('fm-cancel').onclick = closeModal;
+  document.getElementById('fm-save').onclick = async ()=>{
+    const related_id = document.getElementById('fm-who').value, relation = document.getElementById('fm-rel').value;
+    const { error } = await sb.from('ins_family_links').insert({client_id: state.activeClientId, related_id, relation});
+    closeModal();
+    if(error){ setMsg('error','新增失敗'); return; }
+    state.adminFamily = await loadFamily(state.activeClientId); render();
+  };
 }
 
 // ---------- ADMIN: per-policy coverage manager ----------
@@ -2376,12 +2437,15 @@ function renderClientHome(){
   const shownIds = new Set(shownPolicies.map(p=>p.id));
   const shownCoverage = flt ? state.coverage.filter(c=>shownIds.has(c.policy_id)) : state.coverage;
   const hasData = state.policies.length>0 || state.coverage.length>0;
+  const fam = state.family || [];
+  const viewF = state.viewingId ? fam.find(f=>f.related_id===state.viewingId) : null;
+  if(state.viewingId && !viewF) state.viewingId = null;
   let body = '';
   if(tab==='policies'){
     body = `
       <div class="section-title">保單列表</div>
       ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
-      ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
+      ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>${viewF?'請聯繫業務協助建檔':'如有疑問請聯繫您的業務'}</div>` :
         shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
       ${shownCoverage.length ? `
         <div class="section-title" style="margin-top:30px;">保障總和${flt?`・${esc(flt)}`:''}</div>
@@ -2433,7 +2497,7 @@ function renderClientHome(){
       <div class="hero-panel">
         <div class="ring">${ringSvg(gaps.pct)}<div class="ring-in"><div class="ring-num">${gaps.pct}<span>%</span></div><div class="ring-cap">保障完整度</div></div></div>
         <div class="hero-side">
-          <div class="hs-cap">保障檢視</div>
+          <div class="hs-cap">${viewF ? esc(viewF.related.name)+'・'+esc(viewF.relation) : '保障檢視'}</div>
           <div class="hs-big">${state.policies.length} 張保單</div>
           <div class="hs-line">涵蓋 ${gaps.done} / ${gaps.total} 類</div>
           <div class="hs-btns">
@@ -2447,6 +2511,10 @@ function renderClientHome(){
         <div class="rc-txt"><div class="rc-t">覺得不錯嗎？可以推薦我給你朋友喔</div><div class="rc-s">推薦給覺得自己保單不清楚的朋友</div></div>
         <div class="rc-go">›</div>
       </div>
+      ${fam.length ? `<div class="fam-row"><div class="fam-lab">家人</div><div class="chip-row">
+        <button class="chip ${!viewF?'active':''}" data-fam="">我自己</button>
+        ${fam.map(f=>`<button class="chip ${viewF&&viewF.related_id===f.related_id?'active':''}" data-fam="${f.related_id}">${esc(f.related.name)}<small>${esc(f.relation)}</small></button>`).join('')}
+      </div></div>` : ''}
       <div class="tabs">
         <div class="tab ${tab==='policies'?'active':''}" data-ctab="policies">保單</div>
         <div class="tab ${tab==='gap'?'active':''}" data-ctab="gap">缺口${missing.length&&hasData?`<i class="dot"></i>`:''}</div>
@@ -2458,6 +2526,7 @@ function renderClientHome(){
   document.getElementById('open-message').onclick = openMessageModal;
   document.getElementById('open-referral').onclick = openReferralShareModal;
   document.getElementById('open-games').onclick = openGamesMenu;
+  app.querySelectorAll('[data-fam]').forEach(el=>el.onclick=()=>switchViewing(el.dataset.fam));
   app.querySelectorAll('[data-ins]').forEach(el=>el.onclick=()=>{ state.insurerFilter=el.dataset.ins; render(); });
   app.querySelectorAll('[data-ctab]').forEach(el=>el.onclick=()=>{ state.clientTab=el.dataset.ctab; render(); window.scrollTo(0,0); });
   app.querySelectorAll('[data-detail]').forEach(el=>{
