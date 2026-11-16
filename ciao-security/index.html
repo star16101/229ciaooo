@@ -769,11 +769,11 @@ async function loadClients(){
 }
 function activityText(id){
   const a = (state.activity||{})[id];
-  if(!a) return '<span class="act off">⏳ 尚未開通</span>';
-  if(a==='none') return '<span class="act on">✅ 已開通</span>';
-  const days = Math.floor((Date.now()-new Date(a).getTime())/86400000);
-  const when = days<=0 ? '今天' : days===1 ? '昨天' : days<7 ? `${days} 天前` : days<30 ? `${Math.floor(days/7)} 週前` : `${Math.floor(days/30)} 個月前`;
-  return `<span class="act on">✅ 已開通・最近登入 ${when}</span>`;
+  if(!a) return '<span class="act off">✗ 尚未開通</span>';
+  if(a==='none') return '<span class="act on">✓ 已開通,尚未登入</span>';
+  const d = new Date(a), p2=n=>String(n).padStart(2,'0');
+  const t = `${d.getFullYear()}/${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  return `<span class="act on">✓ 已開通,最近登入:${t}</span>`;
 }
 
 async function loadAdminInbox(){
