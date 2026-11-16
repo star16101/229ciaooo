@@ -413,6 +413,157 @@
   .client-row{border-bottom:1px solid rgba(43,33,7,.1);}
   .client-row .ccount{color:#8A7330;}
   .item-row .rm{color:#C8452E;}
+
+  /* ================= 新擬物 Neumorphism（最終覆蓋層）================= */
+  :root{
+    --bg:#E8EBF0; --surface:#E8EBF0; --surface-2:#DEE2E8;
+    --ink:#4A4D57; --ink-soft:#9498A3; --border:transparent;
+    --accent:#F4A62A; --accent-deep:#E8901A; --accent-ink:#B8700F; --accent-soft:#FBE7BE;
+    --brown:#8A5A12; --radius:30px; --radius-sm:20px;
+    --nu-dark:#C6CAD3; --nu-light:#FFFFFF;
+    --raise:8px 8px 18px var(--nu-dark), -8px -8px 18px var(--nu-light);
+    --raise-sm:5px 5px 11px var(--nu-dark), -5px -5px 11px var(--nu-light);
+    --press:inset 5px 5px 10px var(--nu-dark), inset -5px -5px 10px var(--nu-light);
+    --grad:linear-gradient(145deg,#F9CC57,#F29A24);
+    --shadow:var(--raise);
+  }
+  html,body{background:var(--bg)!important;color:var(--ink);}
+  #app{padding-bottom:40px;}
+  .topbar{background:var(--bg)!important;border:0!important;box-shadow:none!important;padding:22px 22px 8px!important;backdrop-filter:none!important;}
+  .brand .title{color:var(--ink)!important;font-size:24px!important;}
+  .brand .sub{color:var(--ink-soft)!important;font-size:11px!important;letter-spacing:.14em;margin-top:6px;}
+  .content{padding:10px 22px 40px!important;}
+  .section-title{background:none!important;border:0!important;box-shadow:none!important;color:var(--ink-soft)!important;font-size:12px!important;letter-spacing:.2em;font-weight:600;margin:26px 4px 14px!important;display:flex;align-items:center;gap:10px;padding:0!important;text-transform:none;}
+  .section-title::before{content:"";width:18px;height:4px;border-radius:4px;background:var(--grad);display:inline-block;}
+  .hint{color:var(--ink-soft)!important;}
+
+  /* cards */
+  .card{background:var(--bg)!important;border:0!important;border-radius:30px!important;box-shadow:var(--raise)!important;color:var(--ink)!important;}
+  .card.tap{transition:box-shadow .15s,transform .15s;cursor:pointer;}
+  .card.tap:active{box-shadow:var(--press)!important;transform:scale(.99);}
+  .panel{background:var(--bg);border-radius:36px;box-shadow:var(--raise);padding:22px 20px 24px;}
+
+  /* buttons */
+  .btn,.btn-sm,button.btn{background:var(--bg)!important;color:var(--ink)!important;border:0!important;border-radius:999px!important;box-shadow:var(--raise-sm)!important;font-weight:600;letter-spacing:.04em;transition:box-shadow .12s,transform .12s;}
+  .btn:active,.btn-sm:active{box-shadow:var(--press)!important;transform:scale(.98);}
+  .btn-primary,.btn.btn-primary{background:var(--grad)!important;color:#fff!important;text-shadow:0 1px 2px rgba(150,80,0,.35);box-shadow:6px 6px 14px rgba(214,150,40,.45),-5px -5px 12px #fff!important;}
+  .btn-primary:active{box-shadow:inset 4px 4px 9px rgba(170,100,10,.5),inset -3px -3px 7px rgba(255,220,130,.6)!important;}
+  .btn-secondary,.btn-sage,.btn-ghost{background:var(--bg)!important;color:var(--accent-ink)!important;}
+  .btn:disabled{opacity:.55;}
+  .icon-btn{background:var(--bg)!important;color:var(--ink)!important;border:0!important;border-radius:999px!important;box-shadow:var(--raise-sm)!important;padding:9px 16px!important;font-size:12px!important;font-weight:600;}
+  .icon-btn:active{box-shadow:var(--press)!important;}
+  .back-btn{background:var(--bg)!important;border:0!important;border-radius:999px!important;box-shadow:var(--raise-sm)!important;color:var(--ink)!important;}
+  .add-item-btn{background:var(--bg)!important;border:0!important;box-shadow:var(--raise-sm)!important;border-radius:999px!important;color:var(--accent-ink)!important;}
+  .fab{background:var(--grad)!important;color:#fff!important;border:0!important;border-radius:50%!important;box-shadow:7px 7px 16px rgba(214,150,40,.5),-6px -6px 14px #fff!important;}
+  .fab:active{box-shadow:inset 4px 4px 9px rgba(170,100,10,.5)!important;}
+  .mini-btn{flex:1;border:0;border-radius:999px;background:var(--bg);color:var(--accent-ink);font-weight:700;font-size:13px;padding:10px 0;box-shadow:var(--raise-sm);cursor:pointer;letter-spacing:.1em;}
+  .mini-btn:active{box-shadow:var(--press);}
+  .btn-row{gap:14px!important;}
+
+  /* inputs */
+  .field input,.field select,.field textarea,input[type=text],input[type=tel],input[type=password],input[type=date],textarea,select{background:var(--bg)!important;border:0!important;border-radius:20px!important;box-shadow:var(--press)!important;color:var(--ink)!important;padding:14px 18px!important;outline:none;}
+  .field input:focus,.field textarea:focus,textarea:focus{box-shadow:var(--press),0 0 0 2px rgba(244,166,42,.55)!important;}
+  .field label,.label{color:var(--ink-soft)!important;font-size:12px!important;letter-spacing:.08em;}
+  .paste-box,.draft-card,.invite-box{background:var(--bg)!important;border:0!important;border-radius:26px!important;box-shadow:var(--press)!important;}
+  .invite-code{color:var(--accent-ink)!important;}
+
+  /* segmented tabs */
+  .tabs{display:flex;gap:0;background:var(--bg)!important;border:0!important;border-radius:999px!important;box-shadow:var(--press)!important;padding:6px!important;margin:0 0 20px!important;}
+  .tab{flex:1;text-align:center;padding:11px 0!important;border-radius:999px!important;color:var(--ink-soft)!important;background:transparent!important;border:0!important;box-shadow:none!important;font-weight:600;font-size:14px;cursor:pointer;position:relative;transition:all .18s;}
+  .tab.active{background:var(--bg)!important;color:var(--accent-ink)!important;box-shadow:var(--raise-sm)!important;}
+  .tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--grad);margin-left:5px;vertical-align:middle;}
+  .tabs.three{margin-top:22px!important;}
+
+  /* login */
+  .login-hero{text-align:center;padding:42px 20px 10px;}
+  .login-hero .island-mascot{width:110px!important;height:auto;margin:0 auto 6px;display:block;filter:drop-shadow(6px 8px 10px rgba(150,155,170,.45));}
+  .login-title{font-size:28px;color:var(--ink);margin-top:6px;}
+  .login-sub{font-size:12px;color:var(--ink-soft);letter-spacing:.12em;margin-top:8px;}
+  .link-muted{text-align:center;color:var(--ink-soft)!important;margin-top:22px;font-size:13px;}
+  .msg{border-radius:20px!important;box-shadow:var(--press);background:var(--bg)!important;border:0!important;}
+  .msg-error{color:#B4574B!important;} .msg-ok{color:#4F8B6B!important;}
+
+  /* policy card */
+  .policy-card{padding:18px 18px 16px!important;margin-bottom:20px!important;}
+  .pol-top{display:flex;align-items:center;gap:14px;}
+  .pol-badge{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--accent-ink);background:var(--bg);box-shadow:var(--press);font-family:'Noto Sans TC',sans-serif;}
+  .pol-main{flex:1;min-width:0;}
+  .pol-main .insurer{font-size:11px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:3px;}
+  .pol-main .name{font-size:16px;font-weight:700;color:var(--ink);line-height:1.35;}
+  .pol-right{flex:none;display:flex;gap:8px;align-items:center;}
+  .chev{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--raise-sm);color:var(--accent-ink);font-size:20px;}
+  .pol-act{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--raise-sm);color:var(--ink);font-size:14px;cursor:pointer;}
+  .pol-act:active{box-shadow:var(--press);} .pol-act.del{color:#B4574B;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .tag{background:var(--bg)!important;border:0!important;box-shadow:var(--press);color:var(--ink-soft)!important;border-radius:999px!important;padding:5px 12px!important;font-size:11px!important;}
+  .tag.accent{color:var(--accent-ink)!important;}
+  .rider-box{margin-top:14px;padding:12px 14px;border-radius:20px;box-shadow:var(--press);}
+  .rider-cap{font-size:11px;color:var(--ink-soft);letter-spacing:.2em;margin-bottom:6px;}
+  .rider-row{padding:6px 0!important;border:0!important;}
+  .rider-name{font-size:13px;color:var(--ink);} .rider-tags{font-size:11px;color:var(--ink-soft);}
+  .item-line{background:transparent!important;border:0!important;}
+
+  /* hero gauge */
+  .hero-panel{display:flex;align-items:center;gap:20px;background:var(--bg);border-radius:36px;box-shadow:var(--raise);padding:22px 20px;}
+  .ring{position:relative;width:128px;height:128px;flex:none;border-radius:50%;box-shadow:var(--raise-sm);padding:6px;background:var(--bg);}
+  .ring-svg{width:100%;height:100%;display:block;}
+  .ring-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-num{font-size:30px;font-weight:700;color:var(--ink);line-height:1;font-family:'Noto Sans TC',sans-serif;}
+  .ring-num span{font-size:13px;color:var(--ink-soft);margin-left:1px;}
+  .ring-cap{font-size:10px;color:var(--ink-soft);letter-spacing:.14em;margin-top:5px;}
+  .hero-side{flex:1;min-width:0;}
+  .hs-cap{font-size:11px;color:var(--ink-soft);letter-spacing:.2em;}
+  .hs-big{font-size:21px;font-weight:700;color:var(--ink);margin:4px 0 2px;font-family:'JinXuan','Noto Serif TC',serif;}
+  .hs-line{font-size:12px;color:var(--accent-ink);font-weight:600;}
+  .hs-btns{display:flex;gap:10px;margin-top:14px;}
+
+  /* gap */
+  .gap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .gap-tile{border-radius:24px;padding:16px 6px 14px;text-align:center;cursor:pointer;transition:all .15s;}
+  .gap-tile.on{background:var(--grad);box-shadow:6px 6px 14px rgba(214,150,40,.4),-5px -5px 12px #fff;color:#fff;}
+  .gap-tile.off{background:var(--bg);box-shadow:var(--press);color:var(--ink-soft);}
+  .gap-ico{font-size:26px;line-height:1;} .gap-tile.off .gap-ico{filter:grayscale(1);opacity:.55;}
+  .gap-name{font-size:12px;font-weight:700;margin-top:9px;} .gap-state{font-size:10px;margin-top:3px;letter-spacing:.1em;opacity:.9;}
+  .gap-detail{margin-top:22px;padding:20px!important;}
+  .gd-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px;}
+  .gd-row{display:flex;gap:12px;margin-top:12px;align-items:flex-start;}
+  .gd-ico{width:38px;height:38px;border-radius:50%;box-shadow:var(--raise-sm);display:flex;align-items:center;justify-content:center;flex:none;}
+  .gd-name{font-size:14px;font-weight:700;color:var(--ink);} .gd-tip{font-size:12px;color:var(--ink-soft);line-height:1.65;margin-top:2px;}
+
+  /* games */
+  .game-menu{display:grid;grid-template-columns:1fr;gap:16px;}
+  .game-tile{display:grid;grid-template-columns:56px 1fr;column-gap:14px;align-items:center;padding:16px 18px;border-radius:28px;background:var(--bg);box-shadow:var(--raise-sm);cursor:pointer;}
+  .game-tile:active{box-shadow:var(--press);}
+  .g-ico{grid-row:1/3;width:56px;height:56px;border-radius:50%;box-shadow:var(--press);display:flex;align-items:center;justify-content:center;font-size:26px;}
+  .g-name{font-weight:700;font-size:15px;color:var(--ink);} .g-desc{font-size:12px;color:var(--ink-soft);}
+  .memo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .memo-card{aspect-ratio:1;border:0;border-radius:20px;background:var(--bg);box-shadow:var(--raise-sm);font-size:26px;cursor:pointer;padding:0!important;transition:all .15s;}
+  .memo-card.on{box-shadow:var(--press);background:var(--bg);} .memo-card.done{background:var(--accent-soft);}
+  .game-stat{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:12px;font-weight:600;}
+  .catch-area{position:relative;height:300px;border-radius:28px;box-shadow:var(--press);overflow:hidden;touch-action:none;}
+  .catch-hud{position:absolute;top:10px;left:16px;right:16px;display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--ink);z-index:2;}
+  .catcher{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:38px;line-height:1;transition:filter .2s;}
+  .catcher.hit{filter:grayscale(1) brightness(.8);}
+  .fall{position:absolute;font-size:28px;transform:translateX(-50%);line-height:1;}
+  .fortune-box{border-radius:28px;box-shadow:var(--press);padding:30px 22px;text-align:center;}
+  .fortune-ico{font-size:46px;display:inline-block;} .fortune-ico.shake{animation:fshake .7s;}
+  @keyframes fshake{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}40%{transform:rotate(16deg)}60%{transform:rotate(-12deg)}80%{transform:rotate(8deg)}}
+  .fortune-text{margin-top:14px;font-size:15px;line-height:1.8;color:var(--ink);font-family:'JinXuan','Noto Serif TC',serif;}
+
+  /* modal */
+  .modal{background:var(--bg)!important;border-radius:36px 36px 0 0!important;box-shadow:0 -10px 30px rgba(120,125,140,.25)!important;border:0!important;}
+  .modal-handle{background:var(--nu-dark)!important;}
+  .modal-title{color:var(--ink)!important;}
+
+  /* lists / admin */
+  .client-row{background:var(--bg)!important;border:0!important;border-radius:28px!important;box-shadow:var(--raise-sm)!important;}
+  .client-row:active{box-shadow:var(--press)!important;}
+  .empty,.loading{color:var(--ink-soft)!important;}
+  .chevron{color:var(--accent-ink)!important;}
+  hr{border:0;height:2px;background:var(--nu-dark);opacity:.4;border-radius:2px;}
+  .login-hero .island-mascot.mascot-lg{width:112px!important;}
+  .top-right{display:flex;align-items:center;gap:10px;}
+  .top-right .island-mascot{width:46px!important;height:auto;filter:drop-shadow(3px 4px 5px rgba(150,155,170,.5));}
 </style>
 </head>
 <body>
@@ -837,6 +988,195 @@ function groupCoverage(list){
   });
 }
 
+
+// ---------- 保障缺口檢視 ----------
+const GAP_ITEMS = [
+  { id:'lump', icon:'🌟', name:'重大傷病／癌症一次金', short:'一次金',
+    test:t=>/重大傷病|重大疾病|癌症(?!身故)|罹患|特定傷病/.test(t),
+    tip:'確診時一次給付，可以補治療期間的收入中斷與自費項目。' },
+  { id:'reimb', icon:'🏥', name:'醫療實支實付', short:'實支實付',
+    test:t=>/實支實付|雜費|實支/.test(t),
+    tip:'住院、手術的自費與雜費依收據核實給付，補健保以外的差額。' },
+  { id:'daily', icon:'🛏️', name:'住院日額／手術', short:'日額・手術',
+    test:t=>/住院日額|住院補貼|病房|手術|日額/.test(t),
+    tip:'住院期間每日定額給付，手術依項目給付，補住院期間的生活開銷。' },
+  { id:'acc', icon:'⚡️', name:'意外保障', short:'意外',
+    test:t=>/意外/.test(t),
+    tip:'包含意外身故、失能與意外醫療，補突發事故造成的支出與收入損失。' },
+  { id:'ltc', icon:'☂️', name:'長照／失能扶助', short:'長照',
+    test:t=>/長照|長期照顧|失能扶助|失能一次金|失能月給付/.test(t),
+    tip:'失能或需要長期照顧時，提供照護費用的現金給付。' },
+  { id:'life', icon:'👼🏻', name:'身價／壽險', short:'身價',
+    test:t=>/身故|壽險|喪葬/.test(t) && !/意外身故|癌症身故/.test(t),
+    tip:'身故時留給家人的保障，補家庭責任與負債。' },
+];
+function computeGaps(coverage, policies, ridersByPolicy){
+  const texts = [];
+  (coverage||[]).forEach(c=>texts.push(String(c.category||'')));
+  (policies||[]).forEach(p=>{
+    texts.push(String(p.product_name||''));
+    ((ridersByPolicy||{})[p.id]||[]).forEach(r=>texts.push(String(r.product_name||'')));
+  });
+  const items = GAP_ITEMS.map(g=>({ ...g, covered: texts.some(t=>g.test(t)) }));
+  const done = items.filter(i=>i.covered).length;
+  return { items, done, total: items.length, pct: Math.round(done/items.length*100) };
+}
+function ringSvg(pct){
+  const r=54, c=2*Math.PI*r, off=c*(1-pct/100);
+  return `<svg viewBox="0 0 140 140" class="ring-svg" aria-hidden="true">
+    <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9D56E"/><stop offset="1" stop-color="#F29A2E"/></linearGradient></defs>
+    <circle cx="70" cy="70" r="${r}" fill="none" stroke="#DADDE4" stroke-width="12"/>
+    <circle cx="70" cy="70" r="${r}" fill="none" stroke="url(#rg)" stroke-width="12" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 70 70)"/>
+  </svg>`;
+}
+async function sendGapMessage(missing, btn){
+  if(!missing.length) return;
+  btn.disabled = true; btn.textContent = '送出中…';
+  const content = `【缺口諮詢】我想了解這幾項保障的補強方式：${missing.map(m=>m.name).join('、')}。方便時請與我聯絡，謝謝！`;
+  const { error } = await sb.from('ins_messages').insert({ client_id: state.activeClientId, content });
+  if(error){ btn.disabled=false; btn.textContent='送出失敗，請再試一次'; return; }
+  const { data } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at',{ascending:false});
+  state.myMessages = data || [];
+  btn.textContent = '已通知業務，會盡快與你聯絡 ✓';
+}
+
+// ---------- 小遊戲 ----------
+function openGamesMenu(){
+  renderModal(`
+    <div class="modal-title">互動小遊戲</div>
+    <div class="game-menu">
+      <div class="game-tile" data-game="memory"><div class="g-ico">🃏</div><div class="g-name">保障翻翻樂</div><div class="g-desc">找出相同的圖案</div></div>
+      <div class="game-tile" data-game="catch"><div class="g-ico">☂️</div><div class="g-name">接住保障傘</div><div class="g-desc">接傘，閃開閃電</div></div>
+      <div class="game-tile" data-game="fortune"><div class="g-ico">🎐</div><div class="g-name">今日小籤</div><div class="g-desc">每天一支</div></div>
+    </div>`);
+  document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>{
+    const g=el.dataset.game;
+    if(g==='memory') openMemoryGame(); else if(g==='catch') openCatchGame(); else openFortune();
+  });
+}
+function openMemoryGame(){
+  const icons=['🌟','🏥','⚡️','☂️','🛡️','🏝️'];
+  const deck=[...icons,...icons].map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(x=>x.v);
+  let open=[], matched=new Set(), moves=0, lock=false;
+  renderModal(`
+    <div class="modal-title">保障翻翻樂</div>
+    <div class="hint" style="margin:-8px 0 14px;">翻開兩張相同的圖案就算配對成功</div>
+    <div class="memo-grid" id="memo"></div>
+    <div class="game-stat" id="memo-stat"></div>
+    <button class="btn btn-primary" id="memo-again" style="margin-top:14px;">重新洗牌</button>`);
+  const grid=document.getElementById('memo'), stat=document.getElementById('memo-stat');
+  function draw(){
+    grid.innerHTML = deck.map((v,i)=>{
+      const on = open.includes(i)||matched.has(i);
+      return `<button class="memo-card ${on?'on':''} ${matched.has(i)?'done':''}" data-i="${i}">${on?v:''}</button>`;
+    }).join('');
+    stat.textContent = matched.size===deck.length ? `全部配對完成！共 ${moves} 步 🎉` : `步數 ${moves}`;
+    grid.querySelectorAll('.memo-card').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      if(lock||open.includes(i)||matched.has(i)) return;
+      open.push(i);
+      if(open.length===2){
+        moves++;
+        const [a,c]=open;
+        if(deck[a]===deck[c]){ matched.add(a); matched.add(c); open=[]; }
+        else { lock=true; draw(); setTimeout(()=>{ open=[]; lock=false; draw(); }, 700); return; }
+      }
+      draw();
+    });
+  }
+  document.getElementById('memo-again').onclick=()=>openMemoryGame();
+  draw();
+}
+function openCatchGame(){
+  renderModal(`
+    <div class="modal-title">接住保障傘</div>
+    <div class="hint" style="margin:-8px 0 12px;">手指左右滑動，用小島接住 ☂️，閃開 ⚡️。共 3 條命，30 秒。</div>
+    <div class="catch-area" id="catch">
+      <div class="catch-hud"><span id="c-score">得分 0</span><span id="c-life">❤️❤️❤️</span><span id="c-time">30</span></div>
+      <div class="catcher" id="catcher">🏝️</div>
+    </div>
+    <div class="game-stat" id="c-result"></div>
+    <button class="btn btn-primary" id="c-start" style="margin-top:12px;">開始</button>`);
+  const area=document.getElementById('catch'), catcher=document.getElementById('catcher');
+  const $score=document.getElementById('c-score'), $life=document.getElementById('c-life'), $time=document.getElementById('c-time'), $res=document.getElementById('c-result');
+  let running=false, raf=0, score=0, lives=3, items=[], px=0.5, last=0, spawn=0, timeLeft=30, tick=0;
+  const setX=(clientX)=>{ const r=area.getBoundingClientRect(); px=Math.min(1,Math.max(0,(clientX-r.left)/r.width)); catcher.style.left=(px*100)+'%'; };
+  area.addEventListener('touchmove',e=>{ setX(e.touches[0].clientX); e.preventDefault(); },{passive:false});
+  area.addEventListener('touchstart',e=>setX(e.touches[0].clientX),{passive:true});
+  area.addEventListener('mousemove',e=>setX(e.clientX));
+  function end(){
+    running=false; cancelAnimationFrame(raf); items.forEach(i=>i.el.remove()); items=[];
+    let best=0; try{ best=+localStorage.getItem('catchBest')||0; if(score>best){ best=score; localStorage.setItem('catchBest',String(best)); } }catch(e){}
+    $res.textContent = `本局得分 ${score}${best?`・最佳 ${best}`:''}`;
+    document.getElementById('c-start').textContent='再玩一次'; document.getElementById('c-start').disabled=false;
+  }
+  function frame(t){
+    if(!running) return;
+    const dt=Math.min(40,t-last); last=t;
+    tick+=dt; if(tick>=1000){ tick-=1000; timeLeft--; $time.textContent=timeLeft; if(timeLeft<=0) return end(); }
+    spawn-=dt;
+    if(spawn<=0){
+      spawn=520+Math.random()*420;
+      const bad=Math.random()<0.32;
+      const el=document.createElement('div'); el.className='fall'; el.textContent=bad?'⚡️':'☂️';
+      const x=0.08+Math.random()*0.84; el.style.left=(x*100)+'%'; area.appendChild(el);
+      items.push({el,x,y:-30,bad,v:0.11+Math.random()*0.07});
+    }
+    const h=area.clientHeight, w=area.clientWidth;
+    for(let i=items.length-1;i>=0;i--){
+      const it=items[i]; it.y+=it.v*dt; it.el.style.top=it.y+'px';
+      if(it.y>h-70 && it.y<h-20 && Math.abs(it.x-px)*w<38){
+        if(it.bad){ lives--; $life.textContent='❤️'.repeat(Math.max(lives,0))||'💔'; catcher.classList.add('hit'); setTimeout(()=>catcher.classList.remove('hit'),250); }
+        else { score++; $score.textContent='得分 '+score; }
+        it.el.remove(); items.splice(i,1);
+        if(lives<=0) return end();
+      } else if(it.y>h){ it.el.remove(); items.splice(i,1); }
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  document.getElementById('c-start').onclick=(e)=>{
+    items.forEach(i=>i.el.remove()); items=[]; score=0; lives=3; timeLeft=30; tick=0; spawn=300; $res.textContent='';
+    $score.textContent='得分 0'; $life.textContent='❤️❤️❤️'; $time.textContent='30';
+    e.target.disabled=true; running=true; last=performance.now(); raf=requestAnimationFrame(frame);
+  };
+  window.__gameCleanup=()=>{ running=false; cancelAnimationFrame(raf); };
+}
+const FORTUNES = [
+  '今天花五分鐘，確認一下自己保單的受益人還是對的人。',
+  '健康是最大的資產，今天記得多喝水、早點睡。',
+  '看看家人最近的保單有沒有需要更新的地方。',
+  '小小的準備，會在需要的時候變成大大的安心。',
+  '今天適合整理一下保單資料，收在手機裡方便查。',
+  '保障不是一次買完，生活改變時也值得重新檢視。',
+  '給自己一個小目標：這個月做一次健康檢查。',
+  '有疑問就問，弄懂自己的保障比買得多更重要。',
+  '好的一天從穩穩的心情開始，今天也慢慢來。',
+  '想到誰，就傳個訊息關心一下吧。',
+  '留一點彈性給意外，生活會輕鬆很多。',
+  '今天的你，已經比昨天更懂得照顧自己。'
+];
+function openFortune(){
+  const today = new Date().toISOString().slice(0,10);
+  let idx=null;
+  try{ const sv=JSON.parse(localStorage.getItem('fortune')||'null'); if(sv&&sv.d===today) idx=sv.i; }catch(e){}
+  renderModal(`
+    <div class="modal-title">今日小籤</div>
+    <div class="fortune-box" id="fortune-box">
+      <div class="fortune-ico" id="fortune-ico">🎐</div>
+      <div class="fortune-text" id="fortune-text">${idx!==null?esc(FORTUNES[idx]):'輕輕點一下，抽今天的小籤'}</div>
+    </div>
+    <button class="btn btn-primary" id="fortune-btn" style="margin-top:14px;">${idx!==null?'今天已經抽過囉':'抽一支'}</button>`);
+  const btn=document.getElementById('fortune-btn');
+  if(idx!==null){ btn.disabled=true; return; }
+  btn.onclick=()=>{
+    const i=Math.floor(Math.random()*FORTUNES.length);
+    try{ localStorage.setItem('fortune',JSON.stringify({d:today,i})); }catch(e){}
+    const ico=document.getElementById('fortune-ico'); ico.classList.add('shake');
+    setTimeout(()=>{ ico.classList.remove('shake'); document.getElementById('fortune-text').textContent=FORTUNES[i]; btn.textContent='今天已經抽過囉'; btn.disabled=true; },700);
+  };
+}
+
 function renderCoverageGrouped(list, editable){
   if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增加總保障內容</div>`;
   const grouped = groupCoverage(editable ? list : mergeSameCategory(list));
@@ -927,14 +1267,20 @@ function renderReferralSignup(){
 
 function renderLogin(){
   app.innerHTML = `
-    <div class="topbar"><div class="brand"><div class="title serif">島嶼團隊出品</div><div class="sub">保單彙整・一目瞭然 By 蕎蕎</div></div>${mascotHtml()}</div>
+    <div class="login-hero">
+      ${mascotHtml().replace('island-mascot','island-mascot mascot-lg')}
+      <div class="login-title serif">島嶼團隊出品</div>
+      <div class="login-sub">保單彙整・一目瞭然 By 蕎蕎</div>
+    </div>
     <div class="content">
-      <div class="tabs">
-        <div class="tab ${state.authTab==='client'?'active':''}" data-tab="client">客戶登入</div>
-        <div class="tab ${state.authTab==='admin'?'active':''}" data-tab="admin">業務登入</div>
+      <div class="panel">
+        <div class="tabs">
+          <div class="tab ${state.authTab==='client'?'active':''}" data-tab="client">客戶登入</div>
+          <div class="tab ${state.authTab==='admin'?'active':''}" data-tab="admin">業務登入</div>
+        </div>
+        ${msgHtml()}
+        ${state.authTab==='admin' ? loginFormHtml() : clientPhoneFormHtml()}
       </div>
-      ${msgHtml()}
-      ${state.authTab==='admin' ? loginFormHtml() : clientPhoneFormHtml()}
       ${state.authTab==='admin' ? `<div class="link-muted" id="admin-setup-link">管理者初始設定</div>` : ''}
     </div>
   `;
@@ -1391,6 +1737,8 @@ function renderAdminClient(){
         }).join('')}
 
       ${state.coverage.length ? `
+        ${(()=>{ const g=computeGaps(state.coverage,state.policies,state.ridersByPolicy); const m=g.items.filter(i=>!i.covered);
+          return `<div class="section-title" style="margin-top:34px;">缺口檢視（${g.done}/${g.total}）</div><div class="card" style="padding:16px 18px;">${m.length?`<div class="hint" style="margin-bottom:8px;">目前沒看到：</div>`+m.map(x=>`<div style="margin:6px 0;font-weight:600;">${x.icon} ${esc(x.name)}</div>`).join(''):'六大類都有涵蓋 🎉'}</div>`; })()}
         <div class="section-title" style="margin-top:34px;">保障總覽（全部保單加總）</div>
         ${renderCoverageGrouped(state.coverage, false)}
       ` : ''}
@@ -1530,12 +1878,13 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
   const polNo = String(polIdx>=0 ? polIdx+1 : 1).padStart(2,'0');
   return `
     <div class="card policy-card">
-      <div class="row1">
-        <div>
+      <div class="pol-top">
+        <div class="pol-badge">${polNo}</div>
+        <div class="pol-main">
           ${p.insurer ? `<div class="insurer">${esc(p.insurer)}</div>` : ''}
           <div class="name">${esc(p.product_name)}</div>
         </div>
-        <div class="pol-right"><span class="pol-no">${polNo}</span>${editable ? `<span style="cursor:pointer;color:var(--ink-soft);" data-edit-policy="${p.id}">✎</span><span style="cursor:pointer;color:var(--danger);" data-del-policy="${p.id}">✕</span>` : ''}</div>
+        <div class="pol-right">${editable ? `<span class="pol-act" data-edit-policy="${p.id}">✎</span><span class="pol-act del" data-del-policy="${p.id}">✕</span>` : (compact ? '<span class="chev">›</span>' : '')}</div>
       </div>
       <div class="tag-row">
         ${statusWarn ? `<span class="tag" style="background:var(--danger-soft);color:var(--danger);">${esc(p.status)}</span>` : ''}
@@ -1543,14 +1892,14 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
         ${p.payment_term ? `<span class="tag">${esc(/^\d+$/.test(String(p.payment_term).trim()) ? p.payment_term.trim()+'年期' : p.payment_term)}</span>` : ''}
         ${p.coverage_plan ? `<span class="tag accent">${esc(p.coverage_plan)}</span>` : ''}
       </div>
-      ${(!compact && riders.length) ? `<div style="margin-top:10px;">${riders.map(r=>`
+      ${(!compact && riders.length) ? `<div class="rider-box"><div class="rider-cap">附約</div>${riders.map(r=>`
         <div class="rider-row">
           <div class="rider-name">${esc(r.product_name)}</div>
           ${(r.payment_term || r.coverage_plan) ? `<div class="rider-tags">${esc([r.payment_term, r.coverage_plan].filter(Boolean).join(' · '))}</div>` : ''}
         </div>
       `).join('')}</div>` : ''}
-      ${(compact && riders.length) ? `<div class="hint" style="margin-top:8px;">附約 ${riders.length} 項</div>` : ''}
-      ${editable ? `<div class="hint" style="margin-top:10px;">📋 保障內容${coverageCount?` (${coverageCount})`:''} ›</div>` : ''}
+      ${(compact && riders.length) ? `<div class="hint" style="margin-top:10px;">附約 ${riders.length} 項</div>` : ''}
+      ${editable ? `<div class="hint" style="margin-top:10px;">保障內容${coverageCount?`（${coverageCount}）`:''} ›</div>` : ''}
     </div>
   `;
 }
@@ -1891,37 +2240,94 @@ function confirmDeleteCoverage(btn, id){
 
 // ---------- CLIENT HOME ----------
 function renderClientHome(){
+  const gaps = computeGaps(state.coverage, state.policies, state.ridersByPolicy);
+  const missing = gaps.items.filter(i=>!i.covered);
+  const tab = state.clientTab || 'policies';
+  const hasData = state.policies.length>0 || state.coverage.length>0;
+  let body = '';
+  if(tab==='policies'){
+    body = `
+      <div class="section-title">保單列表</div>
+      ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
+        state.policies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
+      ${state.coverage.length ? `
+        <div class="section-title" style="margin-top:30px;">保障總覽</div>
+        ${renderCoverageGrouped(state.coverage, false)}` : ''}`;
+  } else if(tab==='gap'){
+    body = `
+      <div class="section-title">保障缺口檢視</div>
+      ${!hasData ? `<div class="empty">目前還沒有保障資料可以檢視<br>請聯絡您的業務協助建檔</div>` : `
+        <div class="gap-grid">
+          ${gaps.items.map(g=>`
+            <div class="gap-tile ${g.covered?'on':'off'}" data-gap="${g.id}">
+              <div class="gap-ico">${g.icon}</div>
+              <div class="gap-name">${esc(g.short)}</div>
+              <div class="gap-state">${g.covered?'已涵蓋':'缺口'}</div>
+            </div>`).join('')}
+        </div>
+        <div class="gap-detail card" id="gap-detail">
+          ${missing.length ? `<div class="gd-title">目前可能缺少 ${missing.length} 類</div>
+            ${missing.map(m=>`<div class="gd-row"><div class="gd-ico">${m.icon}</div><div><div class="gd-name">${esc(m.name)}</div><div class="gd-tip">${esc(m.tip)}</div></div></div>`).join('')}
+            <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">請業務聯絡我，協助補強</button>`
+          : `<div class="gd-title">六大類保障目前都有涵蓋 🎉</div><div class="gd-tip">保障內容也會隨著生活改變，有任何想法都可以留言給業務。</div>`}
+        </div>
+        <div class="hint" style="margin-top:12px;line-height:1.7;">此檢視依已建檔的保障項目做初步比對，僅供參考，不代表保障是否足夠。實際需求與額度請與業務討論。</div>`}`;
+  } else {
+    body = `
+      <div class="section-title">互動小遊戲</div>
+      <div class="game-menu">
+        <div class="game-tile" data-game="memory"><div class="g-ico">🃏</div><div class="g-name">保障翻翻樂</div><div class="g-desc">找出相同的圖案</div></div>
+        <div class="game-tile" data-game="catch"><div class="g-ico">☂️</div><div class="g-name">接住保障傘</div><div class="g-desc">接傘，閃開閃電</div></div>
+        <div class="game-tile" data-game="fortune"><div class="g-ico">🎐</div><div class="g-name">今日小籤</div><div class="g-desc">每天一支</div></div>
+      </div>`;
+  }
   app.innerHTML = `
     <div class="topbar">
       <div class="brand"><div class="title serif" style="line-height:1.3;">你的保障帳戶<br>有多少？</div><div class="sub">By 蕎蕎</div></div>
       <div class="top-right">${mascotHtml()}<div class="icon-btn" id="logout">登出</div></div>
     </div>
     <div class="content">
-      <div class="btn-row" style="margin-bottom:20px;">
-        <button class="btn btn-ghost btn-sm" id="open-message" style="flex:1;">💬 留言給業務</button>
-        <button class="btn btn-ghost btn-sm" id="open-referral" style="flex:1;">👥 推薦朋友</button>
+      <div class="hero-panel">
+        <div class="ring">${ringSvg(gaps.pct)}<div class="ring-in"><div class="ring-num">${gaps.pct}<span>%</span></div><div class="ring-cap">保障完整度</div></div></div>
+        <div class="hero-side">
+          <div class="hs-cap">保障檢視</div>
+          <div class="hs-big">${state.policies.length} 張保單</div>
+          <div class="hs-line">涵蓋 ${gaps.done} / ${gaps.total} 類</div>
+          <div class="hs-btns">
+            <button class="mini-btn" id="open-message">留言</button>
+            <button class="mini-btn" id="open-referral">推薦</button>
+          </div>
+        </div>
       </div>
-
-      <div class="section-title">保單列表</div>
-      ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未有保單資料<br>如有疑問請聯繫您的業務</div>` :
-        state.policies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true)}</div>`).join('').replace(/class="card policy-card"/g,'class="card policy-card tap"')}
-
-      ${state.coverage.length ? `
-        <div class="section-title" style="margin-top:34px;">保障總覽</div>
-        ${renderCoverageGrouped(state.coverage, false)}
-      ` : ''}
+      <div class="tabs three">
+        <div class="tab ${tab==='policies'?'active':''}" data-ctab="policies">保單</div>
+        <div class="tab ${tab==='gap'?'active':''}" data-ctab="gap">缺口${missing.length&&hasData?`<i class="dot"></i>`:''}</div>
+        <div class="tab ${tab==='games'?'active':''}" data-ctab="games">遊戲</div>
+      </div>
+      ${body}
     </div>
   `;
   document.getElementById('logout').onclick = logout;
   document.getElementById('open-message').onclick = openMessageModal;
   document.getElementById('open-referral').onclick = openReferralShareModal;
+  app.querySelectorAll('[data-ctab]').forEach(el=>el.onclick=()=>{ state.clientTab=el.dataset.ctab; render(); window.scrollTo(0,0); });
   app.querySelectorAll('[data-detail]').forEach(el=>{
-    el.onclick = ()=>{
-      state.activePolicyId = el.dataset.detail;
-      state.view = 'client-policy';
-      render();
-    };
+    el.onclick = ()=>{ state.activePolicyId = el.dataset.detail; state.view = 'client-policy'; render(); };
   });
+  app.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>{
+    const g=el.dataset.game;
+    if(g==='memory') openMemoryGame(); else if(g==='catch') openCatchGame(); else openFortune();
+  });
+  app.querySelectorAll('[data-gap]').forEach(el=>el.onclick=()=>{
+    const g = gaps.items.find(x=>x.id===el.dataset.gap);
+    const d = document.getElementById('gap-detail');
+    if(!g||!d) return;
+    d.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const t = d.querySelector('.gd-title');
+    if(t) t.textContent = `${g.icon} ${g.name}：${g.covered?'已涵蓋':'目前沒有看到'}`;
+  });
+  const gc = document.getElementById('gap-contact');
+  if(gc) gc.onclick = ()=>sendGapMessage(missing, gc);
 }
 
 function openMessageModal(){
@@ -2042,6 +2448,7 @@ function renderClientPolicyDetail(){
 
 // ---------- generic modal ----------
 function renderModal(innerHtml){
+  if(window.__gameCleanup){ try{ window.__gameCleanup(); }catch(e){} window.__gameCleanup=null; }
   const existing = document.getElementById('modal-root');
   if(existing) existing.remove();
   const wrap = document.createElement('div');
@@ -2052,6 +2459,7 @@ function renderModal(innerHtml){
   document.body.appendChild(wrap);
 }
 function closeModal(){
+  if(window.__gameCleanup){ try{ window.__gameCleanup(); }catch(e){} window.__gameCleanup=null; }
   const existing = document.getElementById('modal-root');
   if(existing) existing.remove();
 }
