@@ -2469,7 +2469,7 @@ function rcptWarnHtml(){
       const nm = String(r.product_name||'');
       const m = nm.match(/[(（](正本|副本)[)）]\s*$/);
       if(!m) return;
-      const k = /傷害|醫療限額|新長安|龍好意/.test(nm) ? '意外實支' : '醫療實支';
+      const k = (/傷害|新長安|龍好意/.test(nm) || (/醫療限額/.test(nm) && !/住院/.test(nm))) ? '意外實支' : '醫療實支';
       seen[k][m[1]==='正本'?'o':'c']++;
     });
   });
@@ -2487,7 +2487,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
     const nm = String(r.product_name||'');
     const m = nm.match(/[(（](正本|副本)[)）]\s*$/);
     if(!m) return;
-    const kind = /傷害|醫療限額|新長安|龍好意/.test(nm) ? '意外實支' : '醫療實支';
+    const kind = (/傷害|新長安|龍好意/.test(nm) || (/醫療限額/.test(nm) && !/住院/.test(nm))) ? '意外實支' : '醫療實支';
     rcptSeen.add(kind + '(' + m[1] + ')');
   });
   const rcptTags = [...rcptSeen].map(t=>`<span class="tag rcpt-tag">${esc(t)}</span>`).join('');
