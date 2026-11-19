@@ -1928,6 +1928,18 @@ function openEditClientModal(c){
 
 // ---------- ANNOUNCEMENTS ----------
 function linkify(t){ return esc(t).replace(/(https?:\/\/[^\s<]+)/g, u=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent-ink);word-break:break-all;">${u}</a>`); }
+function annMediaHtml(a){
+  const imgs = (a.images||[]).map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" loading="lazy" style="width:100%;border-radius:14px;margin-top:10px;display:block;"></a>`).join('');
+  const lk = a.link_url ? `<a class="btn btn-primary" href="${esc(a.link_url)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:14px;">${esc(a.link_label||'點我看看')}</a>` : '';
+  return imgs+lk;
+}
+async function compressImage(file){
+  const bmp = await createImageBitmap(file);
+  const sc = Math.min(1, 1200/Math.max(bmp.width,bmp.height));
+  const cv = document.createElement('canvas'); cv.width=Math.round(bmp.width*sc); cv.height=Math.round(bmp.height*sc);
+  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+  return await new Promise(r=>cv.toBlob(r,'image/jpeg',0.82));
+}
 function annAudienceIds(a){
   const activated = state.clients.filter(c=>state.activity && state.activity[c.id]);
   if(a.audience==='all') return activated.map(c=>c.id);
@@ -1957,6 +1969,8 @@ function renderAdminAnnouncements(){
             </div>
           </div>
           ${a.body?`<div style="margin-top:8px;font-size:14px;line-height:1.7;white-space:pre-wrap;">${linkify(a.body)}</div>`:''}
+          ${(a.images||[]).length?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">${a.images.map(u=>`<img src="${esc(u)}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;">`).join('')}</div>`:''}
+          ${a.link_url?`<div class="hint" style="margin-top:8px;">🔗 ${esc(a.link_label||'點我看看')}:${esc(a.link_url)}</div>`:''}
           <div class="hint" style="margin-top:10px;">${new Date(a.created_at).toLocaleString('zh-TW')}・${a.audience==='all'?'全部客戶':'指定 '+(a.targets||[]).length+' 位'}</div>
           <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
             <span class="tag accent" data-ann-open="${a.id}" style="cursor:pointer;">已讀 ${done.length} / ${aud.length}（已開通）${open?' ▴':' ▾'}</span>
@@ -1980,6 +1994,13 @@ function openAnnouncementModal(a){
     <div class="modal-title">${editing?'編輯公告':'發新公告'}</div>
     <div class="field"><label>標題</label><input id="an-title" value="${editing?esc(a.title):''}" placeholder="例如:年底保單檢視提醒"></div>
     <div class="field"><label>內容(可換行,網址會自動變成連結)</label><textarea id="an-body" style="min-height:140px;">${editing?esc(a.body||''):''}</textarea></div>
+    <div class="field"><label>連結(選填,客戶會看到一顆按鈕)</label><input id="an-link" value="${editing?esc(a.link_url||''):''}" placeholder="https://..."></div>
+    <div class="field"><label>按鈕文字(選填,預設「點我看看」)</label><input id="an-linklabel" value="${editing?esc(a.link_label||''):''}" placeholder="例如:預約諮詢"></div>
+    <div class="field"><label>圖片(選填,最多 5 張)</label>
+      <input id="an-files" type="file" accept="image/*" multiple style="display:none;">
+      <button class="btn btn-secondary" id="an-pick" type="button">📷 選擇圖片</button>
+      <div id="an-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;"></div>
+    </div>
     ${editing?`<div class="hint">對象:${a.audience==='all'?'全部客戶':'指定客戶'}(發出後不能改對象,要改請刪掉重發)</div>`:`
     <div class="field"><label>發給誰</label>
       <div style="display:flex;gap:10px;margin-bottom:10px;">
@@ -1993,6 +2014,24 @@ function openAnnouncementModal(a){
     <div id="an-err" class="hint" style="color:var(--danger);min-height:18px;margin-bottom:6px;"></div>
     <button class="btn btn-primary" id="an-save">${editing?'儲存':'發出公告'}</button>`);
   const anErr = t=>{ document.getElementById('an-err').textContent=t; };
+  let keep = editing ? [...(a.images||[])] : [];
+  let added = [];
+  const drawThumbs = ()=>{
+    const box = document.getElementById('an-thumbs');
+    box.innerHTML = keep.map((u,i)=>`<div style="position:relative;"><img src="${esc(u)}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;"><span data-rk="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:12px;cursor:pointer;">✕</span></div>`).join('')
+      + added.map((x,i)=>`<div style="position:relative;"><img src="${x.url}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;"><span data-ra="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:12px;cursor:pointer;">✕</span></div>`).join('');
+    box.querySelectorAll('[data-rk]').forEach(el=>el.onclick=()=>{ keep.splice(+el.dataset.rk,1); drawThumbs(); });
+    box.querySelectorAll('[data-ra]').forEach(el=>el.onclick=()=>{ URL.revokeObjectURL(added[+el.dataset.ra].url); added.splice(+el.dataset.ra,1); drawThumbs(); });
+  };
+  drawThumbs();
+  document.getElementById('an-pick').onclick = ()=>document.getElementById('an-files').click();
+  document.getElementById('an-files').onchange = async e=>{
+    for(const f of [...e.target.files]){
+      if(keep.length+added.length>=5){ anErr('最多 5 張圖片'); break; }
+      try{ const blob = await compressImage(f); added.push({blob, url:URL.createObjectURL(blob)}); }catch(err){ anErr('這張圖片讀不了,換一張試試'); }
+    }
+    e.target.value=''; drawThumbs();
+  };
   let mode='all';
   if(!editing){
     const lst=document.getElementById('an-list'), ba=document.getElementById('an-all'), bs=document.getElementById('an-sel');
@@ -2003,13 +2042,24 @@ function openAnnouncementModal(a){
     const title = document.getElementById('an-title').value.trim();
     const body = document.getElementById('an-body').value.trim();
     if(!title){ anErr('請填標題'); return; }
+    const btn = document.getElementById('an-save'); btn.disabled = true; btn.textContent = '處理中…';
+    let link_url = document.getElementById('an-link').value.trim();
+    if(link_url && !/^https?:\/\//i.test(link_url)) link_url = 'https://'+link_url;
+    const link_label = document.getElementById('an-linklabel').value.trim() || null;
+    const urls = [...keep];
+    for(const x of added){
+      const path = (crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2))+'.jpg';
+      const { error: ue } = await sb.storage.from('ann-images').upload(path, x.blob, {contentType:'image/jpeg'});
+      if(ue){ anErr('圖片上傳失敗:'+ue.message); btn.disabled=false; btn.textContent=editing?'儲存':'發出公告'; return; }
+      urls.push(sb.storage.from('ann-images').getPublicUrl(path).data.publicUrl);
+    }
     if(editing){
-      await sb.from('ins_announcements').update({title, body}).eq('id', a.id);
+      await sb.from('ins_announcements').update({title, body, link_url: link_url||null, link_label, images: urls}).eq('id', a.id);
     } else {
       const ids = [...document.querySelectorAll('.an-chk:checked')].map(x=>x.value);
       if(mode==='selected' && !ids.length){ anErr('請至少勾選一位客戶'); return; }
-      const { data, error } = await sb.from('ins_announcements').insert({title, body, audience:mode}).select().single();
-      if(error){ anErr('發送失敗:'+error.message); return; }
+      const { data, error } = await sb.from('ins_announcements').insert({title, body, audience:mode, link_url: link_url||null, link_label, images: urls}).select().single();
+      if(error){ anErr('發送失敗:'+error.message); btn.disabled=false; btn.textContent='發出公告'; return; }
       if(mode==='selected') await sb.from('ins_announcement_targets').insert(ids.map(cid=>({announcement_id:data.id, client_id:cid})));
     }
     closeModal(); await loadAnnouncements(); render();
@@ -2804,7 +2854,7 @@ function annCardsHtml(){
     <div class="section-title">📢 最新公告${unread?`<span class="ann-badge">${unread} 則未讀</span>`:''}</div>
     ${shown.map(a=>{ const nw=!reads.has(a.id); return `<div class="card tap ann-card ${nw?'ann-new':''}" data-ann="${a.id}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><div style="font-weight:700;font-size:14.5px;">${esc(a.title)}</div>${nw?'<span class="tag accent">NEW</span>':''}</div>
-      <div class="hint" style="margin-top:6px;">${new Date(a.created_at).toLocaleDateString('zh-TW')}${a.body?'・點開看內容':''}</div>
+      <div class="hint" style="margin-top:6px;">${new Date(a.created_at).toLocaleDateString('zh-TW')}${(a.body||(a.images||[]).length||a.link_url)?'・點開看內容':''}</div>
     </div>`;}).join('')}
     ${list.length>3?`<div class="hint" id="ann-more" style="text-align:center;cursor:pointer;padding:6px;">${state.annAll?'收合':'看全部公告('+list.length+')'}</div>`:''}
   </div>`;
@@ -2814,7 +2864,7 @@ function bindAnnouncements(){
     const a=(state.myAnns||[]).find(x=>x.id===el.dataset.ann); if(!a) return;
     renderModal(`<div class="modal-title">${esc(a.title)}</div>
       <div class="hint" style="margin-bottom:10px;">${new Date(a.created_at).toLocaleString('zh-TW')}</div>
-      <div style="font-size:15px;line-height:1.8;white-space:pre-wrap;">${linkify(a.body||'')}</div>`);
+      <div style="font-size:15px;line-height:1.8;white-space:pre-wrap;">${linkify(a.body||'')}</div>${annMediaHtml(a)}`);
     if(!state.myAnnReads.has(a.id)){
       state.myAnnReads.add(a.id);
       try{ await sb.from('ins_announcement_reads').insert({announcement_id:a.id, client_id:state.activeClientId}); }catch(e){}
