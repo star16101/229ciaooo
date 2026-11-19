@@ -699,6 +699,7 @@
   .ann-card{margin-bottom:10px;padding:14px 16px;} .ann-card.ann-new{border:1.5px solid #E9B44C;}
   .topbar-c .top-right .island-mascot{width:80px!important;margin:-14px 0 -14px 0!important;}
 .tag.rcpt-tag{background:rgba(182,106,106,.14)!important;color:#B66A6A!important;font-weight:700;border:1px solid rgba(182,106,106,.28);}
+.rcpt-warn{background:rgba(182,106,106,.14);color:#B66A6A;border:1px solid rgba(182,106,106,.28);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:700;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -2296,6 +2297,7 @@ function renderAdminClient(){
 
       <div class="section-title">保單列表</div>
       <div class="hint" style="margin-top:-6px;margin-bottom:14px;">點卡片進入該保單，可看附約與保障內容</div>
+      ${rcptWarnHtml()}
       ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未新增保單</div>` :
         state.policies.map(p=>{
           const covCount = state.coverage.filter(c=>c.policy_id===p.id).length;
@@ -2458,6 +2460,22 @@ function bindParsedCoverageDraftEvents(){
       render();
     };
   });
+}
+
+function rcptWarnHtml(){
+  const seen = {醫療實支:{o:0,c:0}, 意外實支:{o:0,c:0}};
+  (state.policies||[]).forEach(p=>{
+    [{product_name:p.product_name}, ...(state.ridersByPolicy[p.id]||[])].forEach(r=>{
+      const nm = String(r.product_name||'');
+      const m = nm.match(/[(（](正本|副本)[)）]\s*$/);
+      if(!m) return;
+      const k = /傷害|醫療限額|新長安|龍好意/.test(nm) ? '意外實支' : '醫療實支';
+      seen[k][m[1]==='正本'?'o':'c']++;
+    });
+  });
+  const only = Object.keys(seen).filter(k=>seen[k].c>0 && seen[k].o===0);
+  if(!only.length) return '';
+  return `<div class="rcpt-warn">⚠️ 提醒：身上的${only.join('、')}只有副本，沒有持有正本</div>`;
 }
 
 function renderPolicyCard(p, riders, editable, compact, coverageCount){
@@ -2887,6 +2905,7 @@ function renderClientHome(){
     body = `
       <div class="section-title">保單列表</div>
       ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
+      ${rcptWarnHtml()}
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>${viewF?'請聯繫業務協助建檔':'如有疑問請聯繫您的業務'}</div>` :
         shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
       ${shownCoverage.length ? `
