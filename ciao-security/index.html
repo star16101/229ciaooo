@@ -695,6 +695,8 @@
   .topbar-c .brand .title{font-size:21px!important;}
   .topbar-c .top-right .island-mascot{width:62px!important;margin:-8px 0 -8px 0!important;}
   .topbar-c .icon-btn{padding:revert!important;font-size:revert!important;}
+  .ann-wrap{margin:4px 0 18px;} .ann-badge{margin-left:8px;font-size:11px;font-weight:700;color:#fff;background:#E08A1E;border-radius:10px;padding:2px 8px;letter-spacing:0;}
+  .ann-card{margin-bottom:10px;padding:14px 16px;} .ann-card.ann-new{border:1.5px solid #E9B44C;}
 </style>
 </head>
 <body>
@@ -814,11 +816,18 @@ function activityText(id){
   return `<span class="act on">✓ 已開通,最近登入:${t}</span>`;
 }
 
+async function loadAnnouncements(){
+  try{
+    const { data } = await sb.from('ins_announcements').select('*, targets:ins_announcement_targets(client_id), reads:ins_announcement_reads(client_id,read_at)').order('created_at',{ascending:false});
+    state.announcements = data || [];
+  }catch(e){ state.announcements = []; }
+}
 async function loadAdminInbox(){
   const { data: messages } = await sb.from('ins_messages').select('*, clients:ins_clients(name)').order('created_at', {ascending:false});
   const { data: referrals } = await sb.from('ins_referrals').select('*').order('created_at', {ascending:false});
   state.messages = messages || [];
   state.referrals = referrals || [];
+  await loadAnnouncements();
 }
 
 async function loadClientPolicies(clientId){
@@ -855,6 +864,12 @@ async function loadClientHomeData(){
   state.myClient = myClient || null;
   const { data: myMessages } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at', {ascending:false});
   state.myMessages = myMessages || [];
+  try{
+    const { data: anns } = await sb.from('ins_announcements').select('*').order('created_at',{ascending:false});
+    const { data: rds } = await sb.from('ins_announcement_reads').select('announcement_id').eq('client_id', state.activeClientId);
+    state.myAnns = anns || [];
+    state.myAnnReads = new Set((rds||[]).map(r=>r.announcement_id));
+  }catch(e){ state.myAnns=[]; state.myAnnReads=new Set(); }
 }
 
 // ---------- helpers ----------
@@ -1551,6 +1566,7 @@ function render(){
   if(state.view==='admin-policy-coverage') return renderAdminPolicyCoverage();
   if(state.view==='admin-messages') return renderAdminMessages();
   if(state.view==='admin-referrals') return renderAdminReferrals();
+  if(state.view==='admin-announcements') return renderAdminAnnouncements();
   if(state.view==='client-home') return renderClientHome();
   if(state.view==='client-policy') return renderClientPolicyDetail();
   if(state.view==='referral-signup') return renderReferralSignup();
@@ -1763,6 +1779,10 @@ function renderAdminHome(){
           <div style="font-size:13px;color:var(--ink-soft);">💬 訊息</div>
           <div style="font-size:20px;font-weight:700;color:${unreadMsgCount?'var(--accent-ink)':'var(--ink)'};">${unreadMsgCount}</div>
         </div>
+        <div class="card tap" id="go-ann" style="flex:1;text-align:center;padding:14px;margin-bottom:0;">
+          <div style="font-size:13px;color:var(--ink-soft);">📢 公告</div>
+          <div style="font-size:20px;font-weight:700;">${(state.announcements||[]).length}</div>
+        </div>
         <div class="card tap" id="go-referrals" style="flex:1;text-align:center;padding:14px;margin-bottom:0;">
           <div style="font-size:13px;color:var(--ink-soft);">🎉 新推薦</div>
           <div style="font-size:20px;font-weight:700;color:${newReferralCount?'var(--accent-ink)':'var(--ink)'};">${newReferralCount}</div>
@@ -1801,6 +1821,7 @@ function renderAdminHome(){
   document.getElementById('logout').onclick = logout;
   document.getElementById('add-client').onclick = openAddClientModal;
   document.getElementById('go-messages').onclick = ()=>{ state.view='admin-messages'; render(); };
+  document.getElementById('go-ann').onclick = ()=>{ state.view='admin-announcements'; render(); };
   document.getElementById('go-referrals').onclick = ()=>{ state.view='admin-referrals'; render(); };
   const searchInput = document.getElementById('client-search');
   searchInput.oninput = ()=>{ state.clientSearch = searchInput.value; render(); document.getElementById('client-search').focus(); };
@@ -1900,6 +1921,97 @@ function openEditClientModal(c){
     closeModal();
     await loadClients();
     render();
+  };
+}
+
+
+// ---------- ANNOUNCEMENTS ----------
+function linkify(t){ return esc(t).replace(/(https?:\/\/[^\s<]+)/g, u=>`<a href="${u}" target="_blank" rel="noopener" style="color:var(--accent-ink);word-break:break-all;">${u}</a>`); }
+function annAudienceIds(a){
+  const activated = state.clients.filter(c=>state.activity && state.activity[c.id]);
+  if(a.audience==='all') return activated.map(c=>c.id);
+  const t = new Set((a.targets||[]).map(x=>x.client_id));
+  return activated.filter(c=>t.has(c.id)).map(c=>c.id);
+}
+function renderAdminAnnouncements(){
+  const list = state.announcements||[];
+  const nameOf = id=>(state.clients.find(c=>c.id===id)||{}).name||'?';
+  app.innerHTML = `
+    <div class="topbar"><div class="back-btn" id="back">‹ 返回</div></div>
+    <div class="content">
+      <h2 class="serif" style="margin:0 0 6px;">公告</h2>
+      <div class="hint" style="margin-bottom:16px;line-height:1.7;">發出去後,客戶登入就會在首頁看到。公告不會推播到手機,發完建議再傳 LINE 提醒大家進來看。</div>
+      <button class="btn btn-primary" id="ann-new" style="margin-bottom:18px;">＋ 發新公告</button>
+      ${list.length===0 ? `<div class="empty">還沒有公告</div>` : list.map(a=>{
+        const aud = annAudienceIds(a);
+        const readSet = new Set((a.reads||[]).map(r=>r.client_id));
+        const done = aud.filter(id=>readSet.has(id)), todo = aud.filter(id=>!readSet.has(id));
+        const open = state.annOpen===a.id;
+        return `<div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div style="font-weight:700;font-size:15px;">${esc(a.title)}</div>
+            <div style="display:flex;gap:12px;flex-shrink:0;">
+              <span style="cursor:pointer;color:var(--ink-soft);" data-ann-edit="${a.id}">✎</span>
+              <span style="cursor:pointer;color:var(--danger);" data-ann-del="${a.id}">✕</span>
+            </div>
+          </div>
+          ${a.body?`<div style="margin-top:8px;font-size:14px;line-height:1.7;white-space:pre-wrap;">${linkify(a.body)}</div>`:''}
+          <div class="hint" style="margin-top:10px;">${new Date(a.created_at).toLocaleString('zh-TW')}・${a.audience==='all'?'全部客戶':'指定 '+(a.targets||[]).length+' 位'}</div>
+          <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="tag accent" data-ann-open="${a.id}" style="cursor:pointer;">已讀 ${done.length} / ${aud.length}（已開通）${open?' ▴':' ▾'}</span>
+          </div>
+          ${open?`<div style="margin-top:10px;font-size:13px;line-height:1.9;">
+            <div><b>已讀:</b> ${done.length?done.map(id=>esc(nameOf(id))).join('、'):'—'}</div>
+            <div><b>未讀:</b> ${todo.length?todo.map(id=>esc(nameOf(id))).join('、'):'—'}</div>
+          </div>`:''}
+        </div>`;}).join('')}
+    </div>`;
+  document.getElementById('back').onclick = ()=>{ state.view='admin-home'; render(); };
+  document.getElementById('ann-new').onclick = openAnnouncementModal;
+  app.querySelectorAll('[data-ann-open]').forEach(el=>el.onclick=()=>{ state.annOpen = state.annOpen===el.dataset.annOpen?null:el.dataset.annOpen; render(); });
+  app.querySelectorAll('[data-ann-edit]').forEach(el=>el.onclick=()=>openAnnouncementModal(list.find(x=>x.id===el.dataset.annEdit)));
+  app.querySelectorAll('[data-ann-del]').forEach(el=>el.onclick=()=>confirmDeleteGeneric(el,'announcements',el.dataset.annDel,loadAnnouncements));
+}
+function openAnnouncementModal(a){
+  const editing = a && a.id;
+  const sorted = [...state.clients].sort((x,y)=>x.name.localeCompare(y.name,'zh-Hant-TW'));
+  renderModal(`
+    <div class="modal-title">${editing?'編輯公告':'發新公告'}</div>
+    <div class="field"><label>標題</label><input id="an-title" value="${editing?esc(a.title):''}" placeholder="例如:年底保單檢視提醒"></div>
+    <div class="field"><label>內容(可換行,網址會自動變成連結)</label><textarea id="an-body" style="min-height:140px;">${editing?esc(a.body||''):''}</textarea></div>
+    ${editing?`<div class="hint">對象:${a.audience==='all'?'全部客戶':'指定客戶'}(發出後不能改對象,要改請刪掉重發)</div>`:`
+    <div class="field"><label>發給誰</label>
+      <div style="display:flex;gap:10px;margin-bottom:10px;">
+        <button class="chip active" id="an-all" type="button">全部客戶</button>
+        <button class="chip" id="an-sel" type="button">指定客戶</button>
+      </div>
+      <div id="an-list" style="display:none;max-height:200px;overflow:auto;padding:4px 2px;">
+        ${sorted.map(c=>`<label style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px;"><input type="checkbox" class="an-chk" value="${c.id}" style="width:18px;height:18px;"> ${esc(c.name)}</label>`).join('')}
+      </div>
+    </div>`}
+    <div id="an-err" class="hint" style="color:var(--danger);min-height:18px;margin-bottom:6px;"></div>
+    <button class="btn btn-primary" id="an-save">${editing?'儲存':'發出公告'}</button>`);
+  const anErr = t=>{ document.getElementById('an-err').textContent=t; };
+  let mode='all';
+  if(!editing){
+    const lst=document.getElementById('an-list'), ba=document.getElementById('an-all'), bs=document.getElementById('an-sel');
+    ba.onclick=()=>{ mode='all'; ba.classList.add('active'); bs.classList.remove('active'); lst.style.display='none'; };
+    bs.onclick=()=>{ mode='selected'; bs.classList.add('active'); ba.classList.remove('active'); lst.style.display='block'; };
+  }
+  document.getElementById('an-save').onclick = async ()=>{
+    const title = document.getElementById('an-title').value.trim();
+    const body = document.getElementById('an-body').value.trim();
+    if(!title){ anErr('請填標題'); return; }
+    if(editing){
+      await sb.from('ins_announcements').update({title, body}).eq('id', a.id);
+    } else {
+      const ids = [...document.querySelectorAll('.an-chk:checked')].map(x=>x.value);
+      if(mode==='selected' && !ids.length){ anErr('請至少勾選一位客戶'); return; }
+      const { data, error } = await sb.from('ins_announcements').insert({title, body, audience:mode}).select().single();
+      if(error){ anErr('發送失敗:'+error.message); return; }
+      if(mode==='selected') await sb.from('ins_announcement_targets').insert(ids.map(cid=>({announcement_id:data.id, client_id:cid})));
+    }
+    closeModal(); await loadAnnouncements(); render();
   };
 }
 
@@ -2042,7 +2154,7 @@ function openReferralEditModal(r){
 // ---------- generic two-tap delete for simple tables ----------
 function confirmDeleteGeneric(btn, table, id, afterReload){
   if(btn.dataset.confirming){
-    sb.from(table).delete().eq('id', id).then(async ()=>{
+    sb.from(table.startsWith('ins_')?table:'ins_'+table).delete().eq('id', id).then(async ()=>{
       await afterReload();
       render();
     });
@@ -2681,6 +2793,36 @@ function confirmDeleteCoverage(btn, id){
 }
 
 // ---------- CLIENT HOME ----------
+
+function annCardsHtml(){
+  const list = state.myAnns||[]; if(!list.length) return '';
+  const reads = state.myAnnReads||new Set();
+  const unread = list.filter(a=>!reads.has(a.id)).length;
+  const shown = state.annAll ? list : list.slice(0,3);
+  return `<div class="ann-wrap">
+    <div class="section-title">📢 最新公告${unread?`<span class="ann-badge">${unread} 則未讀</span>`:''}</div>
+    ${shown.map(a=>{ const nw=!reads.has(a.id); return `<div class="card tap ann-card ${nw?'ann-new':''}" data-ann="${a.id}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><div style="font-weight:700;font-size:14.5px;">${esc(a.title)}</div>${nw?'<span class="tag accent">NEW</span>':''}</div>
+      <div class="hint" style="margin-top:6px;">${new Date(a.created_at).toLocaleDateString('zh-TW')}${a.body?'・點開看內容':''}</div>
+    </div>`;}).join('')}
+    ${list.length>3?`<div class="hint" id="ann-more" style="text-align:center;cursor:pointer;padding:6px;">${state.annAll?'收合':'看全部公告('+list.length+')'}</div>`:''}
+  </div>`;
+}
+function bindAnnouncements(){
+  app.querySelectorAll('[data-ann]').forEach(el=>el.onclick=async ()=>{
+    const a=(state.myAnns||[]).find(x=>x.id===el.dataset.ann); if(!a) return;
+    renderModal(`<div class="modal-title">${esc(a.title)}</div>
+      <div class="hint" style="margin-bottom:10px;">${new Date(a.created_at).toLocaleString('zh-TW')}</div>
+      <div style="font-size:15px;line-height:1.8;white-space:pre-wrap;">${linkify(a.body||'')}</div>`);
+    if(!state.myAnnReads.has(a.id)){
+      state.myAnnReads.add(a.id);
+      try{ await sb.from('ins_announcement_reads').insert({announcement_id:a.id, client_id:state.activeClientId}); }catch(e){}
+      render();
+    }
+  });
+  const mo=document.getElementById('ann-more'); if(mo) mo.onclick=()=>{ state.annAll=!state.annAll; render(); };
+}
+
 function renderClientHome(){
   const gaps = computeGaps(state.coverage, state.policies, state.ridersByPolicy);
   const missing = gaps.items.filter(i=>i.status==='part'||i.status==='gap'||(i.status==='pending'&&!i.have));
@@ -2760,6 +2902,7 @@ function renderClientHome(){
           <div class="about-item"><i></i><div><div class="ab-t hl">MDRT 2024–26（目標拿終身會員）</div><div class="ab-s">國際銅龍獎｜亞太菁英獎</div></div></div>
         </div>
       </div>
+      ${annCardsHtml()}
       <div class="hero-panel">
         <div class="ring">${ringSvg(gaps.pct)}<div class="ring-in"><div class="ring-num">${gaps.pct}<span>%</span></div><div class="ring-cap">保障完整度</div></div></div>
         <div class="hero-side">
@@ -2788,6 +2931,7 @@ function renderClientHome(){
       ${body}
     </div>
   `;
+  bindAnnouncements();
   document.getElementById('logout').onclick = logout;
   document.getElementById('open-message').onclick = openMessageModal;
   document.getElementById('open-referral').onclick = openReferralShareModal;
