@@ -1273,7 +1273,7 @@ function lifeCardHtml(g, T){
       ${T&&T.lifeBase?`<div class="gd-part"><span>同年齡層一般建議</span><span>${T.lifeBase} 萬起</span></div>`:''}
       <div class="gd-bar"><i style="width:${pct}%"></i></div>
       ${gap>0 ? `<div class="gd-tip" style="margin-top:10px;color:var(--ink);">依你的回答，壽險大約還有 <b>${gapFmt(gap)}</b> 的缺口。若想把缺口補齊，可以按下方按鈕，由業務員與你聯絡。</div>
-        <button class="btn btn-primary" id="life-contact" style="margin-top:14px;">聯繫業務員，協助補齊壽險</button>`
+        <button class="btn btn-primary" id="life-contact" style="margin-top:14px;">與我討論，留愛給家人的額度🌟</button>`
       : `<div class="gd-tip" style="margin-top:10px;color:var(--ink);">依你的回答，目前的壽險已經達到建議額度 🎉</div>`}
       <div class="gd-tip" style="margin-top:10px;">估算方式：${a.fam==='no'?'負債＋基本喪葬費用':'年收入 × '+(a.role==='main'?'10':a.role==='share'?'5':'3')+' 倍＋負債'}，只是粗略概算。<span id="life-reset" style="text-decoration:underline;cursor:pointer;margin-left:6px;">重新回答</span></div>
     </div>`;
@@ -2689,7 +2689,7 @@ function renderClientHome(){
         <div class="gap-detail card" id="gap-detail">
           ${missing.length ? `<div class="gd-title">目前有 ${missing.length} 類可以再補強</div>
             ${gapRowsHtml(missing)}
-            <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">請業務聯絡我，協助補強</button>`
+            <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">跟我討論補強缺口的方案🌟</button>`
           : `<div class="gd-title">各類保障都有達到建議額度 🎉</div><div class="gd-tip">保障內容也會隨著生活改變，有任何想法都可以留言給業務。</div>`}
         </div>
         ${lifeItem && lifeItem.status!=='na' ? lifeCardHtml(lifeItem, gaps.T) : ''}
