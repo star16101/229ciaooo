@@ -2293,15 +2293,6 @@ function renderAdminClient(){
         ${(state.adminFamily||[]).length ? (state.adminFamily).map(f=>`<div class="fam-item"><span class="fam-rel">${esc(f.relation)}</span><span class="fam-name">${esc(f.related.name)}</span><button class="fam-del" data-fam-del="${f.id}" aria-label="移除">✕</button></div>`).join('') : '<div class="hint">尚未設定家人</div>'}
       </div>
 
-      <div class="paste-box">
-        <div style="font-weight:600;font-size:14px;margin-bottom:8px;">📋 一鍵貼上文字自動解析</div>
-        <div class="hint" style="margin-bottom:10px;">一張保單（主約＋附約）一次貼上，整段直接貼上即可：每個民國日期（如 090/03/22）為一張保單，自動帶入保險公司、主約、附約，以及各商品下方的保障項目（保險種類、保障期間、保費、保證續保會自動略過）</div>
-        <textarea id="paste-area" placeholder="在這裡貼上複製的文字…"></textarea>
-        <button class="btn btn-primary btn-sm" id="paste-parse" style="width:100%;margin-top:10px;">解析文字</button>
-      </div>
-      ${state.parsedBatch ? renderParsedBatch() : ''}
-      ${state.parsedMultiBatches.length ? renderParsedMultiBatches() : ''}
-
       <div class="section-title">保單列表</div>
       <div class="hint" style="margin-top:-6px;margin-bottom:14px;">點卡片進入該保單，可看附約與保障內容</div>
       ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未新增保單</div>` :
@@ -2335,15 +2326,6 @@ function renderAdminClient(){
     await sb.from('ins_family_links').delete().eq('id', el.dataset.famDel);
     state.adminFamily = await loadFamily(state.activeClientId); render();
   });
-  document.getElementById('paste-parse').onclick = ()=>{
-    const txt = document.getElementById('paste-area').value;
-    if(!txt.trim()) return;
-    const groups = parseAnyPasteText(txt);
-    if(!groups.length){ setMsg('error','沒有解析到內容，請確認貼上的文字'); return; }
-    state.parsedMultiBatches = groups;
-    state.parsedBatch = null;
-    render();
-  };
   app.querySelectorAll('[data-edit-policy]').forEach(el=>el.onclick=(e)=>{
     e.stopPropagation();
     const p = state.policies.find(x=>x.id===el.dataset.editPolicy);
