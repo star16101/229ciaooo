@@ -2104,8 +2104,13 @@ function renderAdminClient(){
         }).join('')}
 
       ${state.coverage.length ? `
-        ${(()=>{ const g=computeGaps(state.coverage,state.policies,state.ridersByPolicy); const m=g.items.filter(i=>!i.covered);
-          return `<div class="section-title" style="margin-top:34px;">缺口檢視（${g.done}/${g.total}）</div><div class="card" style="padding:16px 18px;">${m.length?`<div class="hint" style="margin-bottom:8px;">目前沒看到：</div>`+m.map(x=>`<div style="margin:6px 0;font-weight:600;">${x.icon} ${esc(x.name)}</div>`).join(''):'六大類都有涵蓋 🎉'}</div>`; })()}
+        ${(()=>{ const g=computeGaps(state.coverage,state.policies,state.ridersByPolicy);
+          const m=g.items.filter(i=>i.status==='part'||i.status==='gap'||(i.status==='pending'&&!i.have));
+          const who = g.band.fromData ? `依 ${g.band.age} 歲（${GAP_BANDS[g.band.key].label}）的建議額度` : `尚未填生日，先以 ${GAP_BANDS[g.band.key].label} 的建議額度`;
+          return `<div class="section-title" style="margin-top:34px;">缺口檢視（完整度 ${g.pct}%）</div><div class="card" style="padding:16px 18px;">
+            <div class="hint" style="margin-bottom:10px;">${who}</div>
+            ${m.length ? m.map(x=>`<div style="margin:12px 0;"><div style="font-weight:700;">${x.icon} ${esc(x.name)}${x.score!=null?`<span class="gd-pct">${x.score}%</span>`:'<span class="gd-pct">待客戶評估</span>'}</div>
+              ${x.parts.map(p=>`<div class="gd-part"><span>${esc(p.label)}</span><span>目前 ${gapFmt(p.have,p.daily)}／建議 ${gapFmt(p.target,p.daily)}</span></div><div class="gd-bar"><i style="width:${Math.min(100,Math.round(p.have/p.target*100))}%"></i></div>`).join('')}</div>`).join('') : '各類保障都有達到建議額度 🎉'}</div>`; })()}
         <div class="section-title" style="margin-top:34px;">保障總和（全部保單加總）</div>
         ${renderCoverageTotal(state.coverage)}
       ` : ''}
