@@ -812,7 +812,7 @@ async function loadClientPolicies(clientId){
 
 const FAMILY_RELATIONS = ['伴侶','爸爸','媽媽','爺爺','奶奶','兒子','女兒','哥哥','姊姊','弟弟','妹妹','手足'];
 async function loadFamily(clientId){
-  const { data } = await sb.from('ins_family_links').select('id, relation, related_id, related:ins_clients!ins_family_links_related_id_fkey(id,name,birth_year)').eq('client_id', clientId).order('created_at');
+  const { data } = await sb.from('ins_family_links').select('id, relation, related_id, related:ins_clients!ins_family_links_related_id_fkey(id,name,birthday)').eq('client_id', clientId).order('created_at');
   return (data||[]).filter(r=>r.related);
 }
 async function switchViewing(id){
@@ -825,7 +825,7 @@ async function loadClientHomeData(){
   state.viewingId = null;
   state.family = await loadFamily(state.activeClientId);
   await loadClientPolicies(state.activeClientId);
-  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code, birth_year').eq('id', state.activeClientId).single();
+  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code, birthday').eq('id', state.activeClientId).single();
   state.myClient = myClient || null;
   const { data: myMessages } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at', {ascending:false});
   state.myMessages = myMessages || [];
@@ -1127,17 +1127,24 @@ const GAP_BANDS = {
   prime: { label:'45 歲以上',      major:150, cancer:150, reimb:40, daily:0.3, accMed:10, frac:10, accDis:500, accAid:3, ltc:3, lifeBase:300 },
 };
 function bandOfAge(age){ return age<=6?'baby':age<=18?'teen':age<=34?'young':age<=44?'adult':'prime'; }
+function ageFromBirthday(bd){
+  if(!bd) return null;
+  const m=String(bd).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null;
+  const now=new Date(); let age=now.getFullYear()-(+m[1]);
+  if((now.getMonth()+1)*100+now.getDate() < (+m[2])*100+(+m[3])) age--;
+  return age>=0?age:null;
+}
+function birthdayText(bd){ const m=String(bd||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[1]}/${m[2]}/${m[3]}`:''; }
 function gapSubject(){
-  let by=null;
-  if(state.viewingId){ const f=(state.family||[]).find(x=>x.related_id===state.viewingId); by=f&&f.related&&f.related.birth_year; }
-  else if(state.myClient && state.myClient.birth_year) by=state.myClient.birth_year;
-  else if(state.activeClientId){ const c=(state.clients||[]).find(x=>x.id===state.activeClientId); by=c&&c.birth_year; }
-  return by||null;
+  if(state.viewingId){ const f=(state.family||[]).find(x=>x.related_id===state.viewingId); return (f&&f.related&&f.related.birthday)||null; }
+  if(state.myClient && state.myClient.birthday) return state.myClient.birthday;
+  if(state.activeClientId){ const c=(state.clients||[]).find(x=>x.id===state.activeClientId); return (c&&c.birthday)||null; }
+  return null;
 }
 function bandKey(){ return 'ageband_'+(state.viewingId||state.activeClientId||''); }
 function gapBand(){
-  const by=gapSubject();
-  if(by){ const age=new Date().getFullYear()-by; return { key:bandOfAge(age), age, fromData:true }; }
+  const age=ageFromBirthday(gapSubject());
+  if(age!=null){ return { key:bandOfAge(age), age, fromData:true }; }
   let k=null; try{ k=localStorage.getItem(bandKey()); }catch(e){}
   return { key: GAP_BANDS[k]?k:'young', age:null, fromData:false, chosen:!!GAP_BANDS[k] };
 }
@@ -1736,7 +1743,7 @@ function renderAdminHome(){
         ${shown.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
           shown.map(c=>{ const sn=surnameOf(c.name); const head = (!sf && sn!==lastSn) ? `<div class="sn-head">${esc(sn)}<span>${state.clients.filter(c=>surnameOf(c.name)===sn).length} 位</span></div>` : ''; lastSn=sn; return head+`
             <div class="client-row" data-id="${c.id}">
-              <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單</div><div class="cact">${activityText(c.id)}</div></div>
+              <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單${(()=>{ const a=ageFromBirthday(c.birthday); return a!=null?'・'+a+' 歲':''; })()}</div><div class="cact">${activityText(c.id)}</div></div>
               <div style="display:flex;align-items:center;gap:14px;">
                 <span style="cursor:pointer;color:var(--ink-soft);" data-edit-client="${c.id}">✎</span>
                 <span style="cursor:pointer;color:var(--danger);" data-del-client="${c.id}">✕</span>
@@ -1834,7 +1841,7 @@ function openEditClientModal(c){
   renderModal(`
     <div class="modal-title">編輯客戶</div>
     <div class="field"><label>客戶姓名</label><input id="ec-name" value="${esc(c.name)}" required></div>
-    <div class="field"><label>出生年（西元，用來判斷建議保額）</label><input id="ec-by" inputmode="numeric" placeholder="例如：1996" value="${c.birth_year||''}"></div>
+    <div class="field"><label>生日（用來計算年紀與建議保額）</label><input id="ec-bd" type="date" value="${c.birthday||''}"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" id="ec-cancel">取消</button>
       <button class="btn btn-primary" id="ec-save">儲存</button>
@@ -1844,8 +1851,8 @@ function openEditClientModal(c){
   document.getElementById('ec-save').onclick = async ()=>{
     const name = document.getElementById('ec-name').value.trim();
     if(!name) return;
-    const by = parseInt(document.getElementById('ec-by').value,10);
-    await sb.from('ins_clients').update({name, birth_year: (by>1900&&by<=new Date().getFullYear())?by:null}).eq('id', c.id);
+    const bd = document.getElementById('ec-bd').value||null;
+    await sb.from('ins_clients').update({name, birthday: bd}).eq('id', c.id);
     closeModal();
     await loadClients();
     render();
@@ -2006,14 +2013,14 @@ function openAddClientModal(){
   renderModal(`
     <div class="modal-title">新增客戶</div>
     <div class="field"><label>客戶姓名</label><input id="nc-name" placeholder="例如：陳小姐" required></div>
-    <div class="field"><label>出生年（西元，可之後再填）</label><input id="nc-by" inputmode="numeric" placeholder="例如：1996"></div>
+    <div class="field"><label>生日（可之後再填）</label><input id="nc-bd" type="date"></div>
     <button class="btn btn-primary" id="nc-save">建立</button>
   `);
   document.getElementById('nc-save').onclick = async ()=>{
     const name = document.getElementById('nc-name').value.trim();
     if(!name) return;
-    const by = parseInt(document.getElementById('nc-by').value,10);
-    const { data, error } = await sb.from('ins_clients').insert({name, ...((by>1900&&by<=new Date().getFullYear())?{birth_year:by}:{})}).select().single();
+    const bd = document.getElementById('nc-bd').value||null;
+    const { data, error } = await sb.from('ins_clients').insert({name, ...(bd?{birthday:bd}:{})}).select().single();
     closeModal();
     if(error){ setMsg('error','新增失敗'); return; }
     await loadClients();
@@ -2070,7 +2077,7 @@ function renderAdminClient(){
     </div>
     <div class="content">
       <h2 class="serif" style="margin:0 0 4px;">${esc(state.activeClientName)}</h2>
-      <div class="hint" style="margin-bottom:18px;">${state.policies.length} 張保單</div>
+      <div class="hint" style="margin-bottom:18px;">${state.policies.length} 張保單${(()=>{ const c=(state.clients||[]).find(x=>x.id===state.activeClientId); const a=ageFromBirthday(c&&c.birthday); return a!=null?`・生日 ${birthdayText(c.birthday)}（${a} 歲）`:'・尚未填生日'; })()}</div>
       ${msgHtml()}
 
       <div class="card fam-card">
@@ -2702,7 +2709,7 @@ function renderClientHome(){
       <div class="hero-panel">
         <div class="ring">${ringSvg(gaps.pct)}<div class="ring-in"><div class="ring-num">${gaps.pct}<span>%</span></div><div class="ring-cap">保障完整度</div></div></div>
         <div class="hero-side">
-          <div class="hs-cap">${viewF ? esc(viewF.related.name)+'・'+esc(viewF.relation) : '保障檢視'}</div>
+          <div class="hs-cap">${(()=>{ const a=ageFromBirthday(gapSubject()); const ag=a!=null?'・'+a+' 歲':''; return viewF ? esc(viewF.related.name)+'・'+esc(viewF.relation)+ag : '保障檢視'+ag; })()}</div>
           <div class="hs-big">${state.policies.length} 張保單</div>
           <div class="hs-line">涵蓋 ${gaps.done} / ${gaps.total} 類</div>
           <div class="hs-btns">
