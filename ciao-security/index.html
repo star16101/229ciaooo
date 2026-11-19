@@ -669,6 +669,8 @@
   .life-card{margin-top:16px;} .life-q{font-size:13px;font-weight:700;color:var(--ink);margin:16px 0 8px;} .life-res{margin-top:18px;padding-top:6px;}
   .life-card .chip-row{flex-wrap:wrap;overflow:visible;gap:10px;}
   .gap-tile.na{opacity:.5;} .gap-tile.na .gap-state{font-size:10.5px;}
+  .gr{margin-top:16px;} .gr-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;} .gr-name{font-size:14.5px;font-weight:700;color:var(--ink);} .gr-pct{font-size:14px;font-weight:700;color:#C98A12;flex:none;}
+  .gr .gd-bar{margin-top:7px;} .gr-sub{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink-soft);margin-top:6px;padding-left:2px;} .gr-sub em{font-style:normal;opacity:.75;}
 </style>
 </head>
 <body>
@@ -1237,6 +1239,15 @@ function ringSvg(pct){
     <circle cx="70" cy="70" r="${r}" fill="none" stroke="url(#rg)" stroke-width="12" stroke-linecap="round"
       stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 70 70)"/>
   </svg>`;
+}
+function gapRowsHtml(list){
+  return list.map(m=>{
+    const unmet=(m.parts||[]).filter(p=>p.have<p.target);
+    const sc = m.score!=null ? m.score : 0;
+    return `<div class="gr"><div class="gr-top"><span class="gr-name">${m.icon} ${esc(m.name)}</span><span class="gr-pct">${m.score!=null?m.score+'%':'待評估'}</span></div>
+      <div class="gd-bar"><i style="width:${sc}%"></i></div>
+      ${unmet.map(p=>`<div class="gr-sub"><span>${esc(p.label)}</span><span>${gapFmt(p.have,p.daily)} <em>/ 建議 ${gapFmt(p.target,p.daily)}</em></span></div>`).join('')}</div>`;
+  }).join('');
 }
 function gapBandHtml(B){
   const T = GAP_BANDS[B.key];
@@ -2109,8 +2120,7 @@ function renderAdminClient(){
           const who = g.band.fromData ? `依 ${g.band.age} 歲（${GAP_BANDS[g.band.key].label}）的建議額度` : `尚未填生日，先以 ${GAP_BANDS[g.band.key].label} 的建議額度`;
           return `<div class="section-title" style="margin-top:34px;">缺口檢視（完整度 ${g.pct}%）</div><div class="card" style="padding:16px 18px;">
             <div class="hint" style="margin-bottom:10px;">${who}</div>
-            ${m.length ? m.map(x=>`<div style="margin:12px 0;"><div style="font-weight:700;">${x.icon} ${esc(x.name)}${x.score!=null?`<span class="gd-pct">${x.score}%</span>`:'<span class="gd-pct">待客戶評估</span>'}</div>
-              ${x.parts.map(p=>`<div class="gd-part"><span>${esc(p.label)}</span><span>目前 ${gapFmt(p.have,p.daily)}／建議 ${gapFmt(p.target,p.daily)}</span></div><div class="gd-bar"><i style="width:${Math.min(100,Math.round(p.have/p.target*100))}%"></i></div>`).join('')}</div>`).join('') : '各類保障都有達到建議額度 🎉'}</div>`; })()}
+            ${m.length ? gapRowsHtml(m) : '各類保障都有達到建議額度 🎉'}</div>`; })()}
         <div class="section-title" style="margin-top:34px;">保障總和（全部保單加總）</div>
         ${renderCoverageTotal(state.coverage)}
       ` : ''}
@@ -2678,9 +2688,7 @@ function renderClientHome(){
         </div>
         <div class="gap-detail card" id="gap-detail">
           ${missing.length ? `<div class="gd-title">目前有 ${missing.length} 類可以再補強</div>
-            ${missing.map(m=>`<div class="gd-row"><div class="gd-ico">${m.icon}</div><div style="flex:1;min-width:0;"><div class="gd-name">${esc(m.name)}${m.score!=null?`<span class="gd-pct">${m.score}%</span>`:''}</div>
-              ${m.parts.map(p=>`<div class="gd-part"><span>${esc(p.label)}</span><span>目前 ${gapFmt(p.have,p.daily)}／建議 ${gapFmt(p.target,p.daily)}</span></div><div class="gd-bar"><i style="width:${Math.min(100,Math.round(p.have/p.target*100))}%"></i></div>`).join('')}
-              <div class="gd-tip">${esc(m.tip)}</div></div></div>`).join('')}
+            ${gapRowsHtml(missing)}
             <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">請業務聯絡我，協助補強</button>`
           : `<div class="gd-title">各類保障都有達到建議額度 🎉</div><div class="gd-tip">保障內容也會隨著生活改變，有任何想法都可以留言給業務。</div>`}
         </div>
