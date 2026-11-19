@@ -1840,7 +1840,7 @@ function renderAdminHome(){
   });
 }
 
-const BACKUP_TABLES = ['clients','policies','policy_riders','coverage_summary','messages','referrals'];
+const BACKUP_TABLES = ['ins_clients','ins_policies','ins_policy_riders','ins_coverage_summary','ins_messages','ins_referrals','ins_family_links'];
 async function exportBackup(){
   const out = { version:1, exported_at:new Date().toISOString(), tables:{} };
   for(const t of BACKUP_TABLES){
@@ -1848,10 +1848,19 @@ async function exportBackup(){
     if(error){ setMsg('error', `匯出失敗：${t}`); return; }
     out.tables[t] = data || [];
   }
-  const blob = new Blob([JSON.stringify(out,null,2)], {type:'application/json'});
+  const fname = `保單備份_${new Date().toISOString().slice(0,10)}.json`;
+  const text = JSON.stringify(out,null,2);
+  try{
+    const file = new File([text], fname, {type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:fname});
+      setMsg('ok', '備份已匯出'); return;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const blob = new Blob([text], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `保單備份_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = fname;
   document.body.appendChild(a); a.click(); a.remove();
   setMsg('ok', '備份已下載');
 }
