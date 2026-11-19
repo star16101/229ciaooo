@@ -668,6 +668,7 @@
   .gd-bar{height:6px;border-radius:6px;box-shadow:var(--press);margin-top:5px;overflow:hidden;} .gd-bar i{display:block;height:100%;border-radius:6px;background:var(--grad);}
   .life-card{margin-top:16px;} .life-q{font-size:13px;font-weight:700;color:var(--ink);margin:16px 0 8px;} .life-res{margin-top:18px;padding-top:6px;}
   .life-card .chip-row{flex-wrap:wrap;overflow:visible;gap:10px;}
+  .gap-tile.na{opacity:.5;} .gap-tile.na .gap-state{font-size:10.5px;}
 </style>
 </head>
 <body>
@@ -811,7 +812,7 @@ async function loadClientPolicies(clientId){
 
 const FAMILY_RELATIONS = ['伴侶','爸爸','媽媽','爺爺','奶奶','兒子','女兒','哥哥','姊姊','弟弟','妹妹','手足'];
 async function loadFamily(clientId){
-  const { data } = await sb.from('ins_family_links').select('id, relation, related_id, related:ins_clients!ins_family_links_related_id_fkey(id,name)').eq('client_id', clientId).order('created_at');
+  const { data } = await sb.from('ins_family_links').select('id, relation, related_id, related:ins_clients!ins_family_links_related_id_fkey(id,name,birth_year)').eq('client_id', clientId).order('created_at');
   return (data||[]).filter(r=>r.related);
 }
 async function switchViewing(id){
@@ -824,7 +825,7 @@ async function loadClientHomeData(){
   state.viewingId = null;
   state.family = await loadFamily(state.activeClientId);
   await loadClientPolicies(state.activeClientId);
-  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code').eq('id', state.activeClientId).single();
+  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code, birth_year').eq('id', state.activeClientId).single();
   state.myClient = myClient || null;
   const { data: myMessages } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at', {ascending:false});
   state.myMessages = myMessages || [];
@@ -1117,32 +1118,56 @@ function groupCoverage(list){
 
 
 // ---------- 保障缺口檢視 ----------
+// 各年齡層建議額度（萬）。0 代表該年齡層不適用
+const GAP_BANDS = {
+  baby:  { label:'0–6 歲 嬰幼兒',  major:50,  cancer:50,  reimb:20, daily:0.3, accMed:3,  frac:10, accDis:0,   accAid:0, ltc:0, lifeBase:0 },
+  teen:  { label:'7–18 歲 青少年', major:100, cancer:100, reimb:30, daily:0.3, accMed:3,  frac:10, accDis:0,   accAid:0, ltc:0, lifeBase:0 },
+  young: { label:'19–34 歲',       major:100, cancer:100, reimb:30, daily:0.3, accMed:10, frac:10, accDis:500, accAid:3, ltc:3, lifeBase:300 },
+  adult: { label:'35–44 歲',       major:200, cancer:200, reimb:30, daily:0.3, accMed:10, frac:10, accDis:500, accAid:3, ltc:3, lifeBase:500 },
+  prime: { label:'45 歲以上',      major:150, cancer:150, reimb:40, daily:0.3, accMed:10, frac:10, accDis:500, accAid:3, ltc:3, lifeBase:300 },
+};
+function bandOfAge(age){ return age<=6?'baby':age<=18?'teen':age<=34?'young':age<=44?'adult':'prime'; }
+function gapSubject(){
+  let by=null;
+  if(state.viewingId){ const f=(state.family||[]).find(x=>x.related_id===state.viewingId); by=f&&f.related&&f.related.birth_year; }
+  else if(state.myClient && state.myClient.birth_year) by=state.myClient.birth_year;
+  else if(state.activeClientId){ const c=(state.clients||[]).find(x=>x.id===state.activeClientId); by=c&&c.birth_year; }
+  return by||null;
+}
+function bandKey(){ return 'ageband_'+(state.viewingId||state.activeClientId||''); }
+function gapBand(){
+  const by=gapSubject();
+  if(by){ const age=new Date().getFullYear()-by; return { key:bandOfAge(age), age, fromData:true }; }
+  let k=null; try{ k=localStorage.getItem(bandKey()); }catch(e){}
+  return { key: GAP_BANDS[k]?k:'young', age:null, fromData:false, chosen:!!GAP_BANDS[k] };
+}
 const GAP_ITEMS = [
   { id:'lump', icon:'🌟', name:'重大傷病／癌症一次金', short:'一次金',
-    parts:[
-      { label:'重大傷病一次金', re:/^重大傷病|^重大疾病(?!\(輕度\))/, target:100 },
-      { label:'癌症一次金', re:/^重度癌症|^癌症罹患|^重大傷病\(含癌症\)/, target:150 },
+    parts:T=>[
+      { label:'重大傷病一次金', re:/^重大傷病|^重大疾病(?!\(輕度\))/, target:T.major },
+      { label:'癌症一次金', re:/^重度癌症|^癌症罹患|^重大傷病\(含癌症\)/, target:T.cancer },
     ],
     tip:'確診時一次給付，可以補治療期間的收入中斷與自費項目。' },
   { id:'reimb', icon:'🏥', name:'醫療實支實付', short:'實支實付',
-    parts:[ { label:'住院雜費', re:/^住院雜費/, target:20 } ],
+    parts:T=>[ { label:'住院雜費', re:/^住院雜費/, target:T.reimb } ],
     tip:'住院、手術的自費與雜費依收據核實給付，補健保以外的差額。' },
   { id:'daily', icon:'🛏️', name:'住院日額／手術', short:'日額・手術',
-    parts:[
-      { label:'病房費（每日）', re:/^病房費/, target:0.2, daily:true },
+    parts:T=>[
+      { label:'病房費（每日）', re:/^病房費/, target:T.daily, daily:true },
       { label:'住院手術', re:/^住院(特定)?手術/, target:10 },
     ],
     tip:'住院期間每日定額給付，手術依項目給付，補住院期間的生活開銷。' },
   { id:'acc', icon:'⚡️', name:'意外保障', short:'意外',
-    parts:[
-      { label:'意外醫療限額', re:/^意外醫療限額/, target:10 },
-      { label:'骨折醫療', re:/^骨折醫療/, target:10 },
-      { label:'意外失能金', re:/^意外失能金/, target:100 },
-      { label:'意外失能扶助金（每月）', re:/^意外失能扶助金/, target:3 },
+    parts:T=>[
+      { label:'意外醫療限額', re:/^意外醫療限額/, target:T.accMed },
+      { label:'意外住院日額', re:/^意外住院/, target:0.3, daily:true, kidsOnly:true },
+      { label:'骨折醫療', re:/^骨折醫療/, target:T.frac },
+      { label:'意外失能金', re:/^意外失能金/, target:T.accDis },
+      { label:'意外失能扶助金（每月）', re:/^意外失能扶助金/, target:T.accAid },
     ],
     tip:'包含意外身故、失能與意外醫療，補突發事故造成的支出與收入損失。' },
   { id:'ltc', icon:'🌿', name:'長照／失能扶助', short:'長照',
-    parts:[ { label:'每月失能／長照扶助金', re:/^(長照失能|疾病失能)扶助金/, target:3 } ],
+    parts:T=>[ { label:'每月失能／長照扶助金', re:/^(長照失能|疾病失能)扶助金/, target:T.ltc } ],
     tip:'失能或需要長期照顧時，提供照護費用的現金給付。' },
   { id:'life', icon:'👼🏻', name:'身價／壽險', short:'身價', life:true,
     tip:'身故時留給家人的保障，補家庭責任與負債。' },
@@ -1174,24 +1199,29 @@ function lifeNeed(a){
   return Math.round((LIFE_INCOME[a.inc][1]*mult + LIFE_DEBT[a.debt][1])/10)*10;
 }
 function computeGaps(coverage, policies, ridersByPolicy){
+  const B = gapBand(), T = GAP_BANDS[B.key], kids = (B.key==='baby'||B.key==='teen');
   const items = GAP_ITEMS.map(g=>{
     if(g.life){
       const have = gapWan(coverage, /^疾病身故/);
+      if(!T.lifeBase) return { ...g, have, score:null, covered:true, status:'na', parts:[] };
       const need = lifeNeed(lifeAnswers());
       if(need==null) return { ...g, have, score:null, covered: have>0, status:'pending', parts:[] };
       const score = need<=0 ? 100 : Math.min(100, Math.round(have/need*100));
       return { ...g, have, need, score, covered: score>=90, status: score>=90?'ok':score>=50?'part':'gap',
                parts:[{ label:'壽險（疾病身故）', have, target:need }] };
     }
-    const parts = g.parts.map(p=>({ label:p.label, daily:!!p.daily, target:p.target, have:gapWan(coverage,p.re) }));
+    const parts = g.parts(T).filter(p=>p.target>0 && (!p.kidsOnly || kids)).map(p=>({ label:p.label, daily:!!p.daily, target:p.target, have:gapWan(coverage,p.re) }));
+    if(!parts.length) return { ...g, parts:[], score:null, covered:true, status:'na' };
     const score = Math.round(parts.reduce((s,p)=>s+Math.min(1,p.have/p.target),0)/parts.length*100);
     return { ...g, parts, score, covered: score>=90, status: score>=90?'ok':score>=50?'part':'gap' };
   });
   const scored = items.filter(i=>i.score!=null);
-  const done = items.filter(i=>i.covered).length;
+  const applicable = items.filter(i=>i.status!=='na');
+  const done = applicable.filter(i=>i.covered).length;
   const pct = scored.length ? Math.round(scored.reduce((s,i)=>s+i.score,0)/scored.length) : 0;
-  return { items, done, total: items.length, pct };
+  return { items, done, total: applicable.length, pct, band:B, T };
 }
+
 function ringSvg(pct){
   const r=54, c=2*Math.PI*r, off=c*(1-pct/100);
   return `<svg viewBox="0 0 140 140" class="ring-svg" aria-hidden="true">
@@ -1201,7 +1231,13 @@ function ringSvg(pct){
       stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 70 70)"/>
   </svg>`;
 }
-function lifeCardHtml(g){
+function gapBandHtml(B){
+  const T = GAP_BANDS[B.key];
+  if(B.fromData) return `<div class="gd-tip" style="margin:0 4px 14px;">依 ${B.age} 歲（${T.label}）的建議額度評估</div>`;
+  return `<div class="gd-tip" style="margin:0 4px 8px;">請選擇年齡層，用來對照建議額度${B.chosen?'':'（目前先以 19–34 歲為準）'}：</div>
+    <div class="chip-row" style="margin-bottom:14px;flex-wrap:wrap;overflow:visible;">${Object.entries(GAP_BANDS).map(([k,v])=>`<button class="chip ${B.key===k&&B.chosen?'active':''}" data-band="${k}">${v.label.split(' ')[0]}</button>`).join('')}</div>`;
+}
+function lifeCardHtml(g, T){
   const a = lifeAnswers()||{};
   const chip=(k,v,label,on)=>`<button class="chip ${on?'active':''}" data-lq="${k}" data-v="${v}">${label}</button>`;
   const need = lifeNeed(a);
@@ -1216,6 +1252,7 @@ function lifeCardHtml(g){
     res = `<div class="life-res">
       <div class="gd-part"><span>建議壽險保額</span><span>約 ${need} 萬</span></div>
       <div class="gd-part"><span>你目前的壽險（疾病身故）</span><span>${gapFmt(have)}</span></div>
+      ${T&&T.lifeBase?`<div class="gd-part"><span>同年齡層一般建議</span><span>${T.lifeBase} 萬起</span></div>`:''}
       <div class="gd-bar"><i style="width:${pct}%"></i></div>
       ${gap>0 ? `<div class="gd-tip" style="margin-top:10px;color:var(--ink);">依你的回答，壽險大約還有 <b>${gapFmt(gap)}</b> 的缺口。若想把缺口補齊，可以按下方按鈕，由業務員與你聯絡。</div>
         <button class="btn btn-primary" id="life-contact" style="margin-top:14px;">聯繫業務員，協助補齊壽險</button>`
@@ -1797,6 +1834,7 @@ function openEditClientModal(c){
   renderModal(`
     <div class="modal-title">編輯客戶</div>
     <div class="field"><label>客戶姓名</label><input id="ec-name" value="${esc(c.name)}" required></div>
+    <div class="field"><label>出生年（西元，用來判斷建議保額）</label><input id="ec-by" inputmode="numeric" placeholder="例如：1996" value="${c.birth_year||''}"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" id="ec-cancel">取消</button>
       <button class="btn btn-primary" id="ec-save">儲存</button>
@@ -1806,7 +1844,8 @@ function openEditClientModal(c){
   document.getElementById('ec-save').onclick = async ()=>{
     const name = document.getElementById('ec-name').value.trim();
     if(!name) return;
-    await sb.from('ins_clients').update({name}).eq('id', c.id);
+    const by = parseInt(document.getElementById('ec-by').value,10);
+    await sb.from('ins_clients').update({name, birth_year: (by>1900&&by<=new Date().getFullYear())?by:null}).eq('id', c.id);
     closeModal();
     await loadClients();
     render();
@@ -1967,12 +2006,14 @@ function openAddClientModal(){
   renderModal(`
     <div class="modal-title">新增客戶</div>
     <div class="field"><label>客戶姓名</label><input id="nc-name" placeholder="例如：陳小姐" required></div>
+    <div class="field"><label>出生年（西元，可之後再填）</label><input id="nc-by" inputmode="numeric" placeholder="例如：1996"></div>
     <button class="btn btn-primary" id="nc-save">建立</button>
   `);
   document.getElementById('nc-save').onclick = async ()=>{
     const name = document.getElementById('nc-name').value.trim();
     if(!name) return;
-    const { data, error } = await sb.from('ins_clients').insert({name}).select().single();
+    const by = parseInt(document.getElementById('nc-by').value,10);
+    const { data, error } = await sb.from('ins_clients').insert({name, ...((by>1900&&by<=new Date().getFullYear())?{birth_year:by}:{})}).select().single();
     closeModal();
     if(error){ setMsg('error','新增失敗'); return; }
     await loadClients();
@@ -2614,12 +2655,13 @@ function renderClientHome(){
     body = `
       <div class="section-title">保障缺口檢視</div>
       ${!hasData ? `<div class="empty">目前還沒有保障資料可以檢視<br>請聯絡您的業務協助建檔</div>` : `
+        ${gapBandHtml(gaps.band)}
         <div class="gap-grid">
           ${gaps.items.map(g=>`
-            <div class="gap-tile ${g.status==='ok'?'on':g.status==='part'?'half':'off'}" data-gap="${g.id}">
+            <div class="gap-tile ${g.status==='ok'?'on':g.status==='part'?'half':g.status==='na'?'off na':'off'}" data-gap="${g.id}">
               <div class="gap-ico">${g.icon}</div>
               <div class="gap-name">${esc(g.short)}</div>
-              <div class="gap-state">${g.score!=null?g.score+'%':'待評估'}</div>
+              <div class="gap-state">${g.status==='na'?'此年齡層不需':g.score!=null?g.score+'%':'待評估'}</div>
             </div>`).join('')}
         </div>
         <div class="gap-detail card" id="gap-detail">
@@ -2630,8 +2672,8 @@ function renderClientHome(){
             <button class="btn btn-primary" id="gap-contact" style="margin-top:16px;">請業務聯絡我，協助補強</button>`
           : `<div class="gd-title">各類保障都有達到建議額度 🎉</div><div class="gd-tip">保障內容也會隨著生活改變，有任何想法都可以留言給業務。</div>`}
         </div>
-        ${lifeCardHtml(lifeItem)}
-        <div class="hint" style="margin-top:12px;line-height:1.7;">此檢視依已建檔的保障額度，與一般常見的建議額度概算比較（例如實支實付雜費 20 萬、癌症一次金 150 萬、意外醫療與骨折各 10 萬），僅供參考，不代表保障是否足夠。實際需求與額度請與業務討論。</div>`}
+        ${lifeItem && lifeItem.status!=='na' ? lifeCardHtml(lifeItem, gaps.T) : ''}
+        <div class="hint" style="margin-top:12px;line-height:1.7;">此檢視依已建檔的保障額度，與各年齡層一般常見的建議額度比較，僅供參考，不代表保障是否足夠。實際需求與額度請與業務討論。</div>`}
       <a class="promo-card" href="https://229ciaooo.pages.dev" target="_blank" rel="noopener">
         <div class="promo-ico">💰</div>
         <div class="promo-txt"><div class="promo-t">讓你的錢幫你賺錢</div><div class="promo-s">輕鬆理財</div></div>
@@ -2714,6 +2756,7 @@ function renderClientHome(){
     a[k] = (k==='fam'||k==='role') ? v : parseInt(v,10);
     lifeSave(a); render();
   });
+  app.querySelectorAll('[data-band]').forEach(el=>el.onclick=()=>{ try{ localStorage.setItem(bandKey(), el.dataset.band); }catch(e){} render(); });
   const lr = document.getElementById('life-reset'); if(lr) lr.onclick=()=>{ lifeSave({}); render(); };
   const lc = document.getElementById('life-contact'); if(lc) lc.onclick=()=>sendLifeMessage(lifeItem, lc);
 }
