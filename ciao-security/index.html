@@ -2862,8 +2862,8 @@ function confirmDeleteCoverage(btn, id){
 
 // ---------- CLIENT HOME ----------
 
-// 數字看板：客戶數超過300、被推薦超過10次時，再往上調整
-const BRAND_STATS = {years:'3-5', policies:'100+', clients:'200+', referrals:'10'};
+// 數字看板：客戶數超過300、被推薦超過30次時，再往上調整
+const BRAND_STATS = {years:'3-5', policies:'100+', clients:'200+', referrals:'30+'};
 
 function annCardsHtml(){
   const list = state.myAnns||[]; if(!list.length) return '';
@@ -2975,7 +2975,7 @@ function renderClientHome(){
         </div>
       </div>
       <div class="statboard">
-        ${[['服務年資',BRAND_STATS.years,'年'],['保單彙整',BRAND_STATS.policies,'次'],['服務客戶',BRAND_STATS.clients,''],['轉介紹',BRAND_STATS.referrals,'次']].map(([l,v,u])=>`<div class="stat-i"><div class="stat-l">${l}</div><div class="stat-v">${String(v).replace(/\+$/,'')}${/\+$/.test(v)?'<sup>+</sup>':''}${u?`<span class="stat-u">${u}</span>`:''}</div></div>`).join('')}
+        ${[['服務年資',BRAND_STATS.years,'年'],['保單彙整',BRAND_STATS.policies,'次'],['服務客戶',BRAND_STATS.clients,'位'],['轉介紹',BRAND_STATS.referrals,'次']].map(([l,v,u])=>`<div class="stat-i"><div class="stat-l">${l}</div><div class="stat-v">${String(v).replace(/\+$/,'')}${/\+$/.test(v)?'<sup>+</sup>':''}${u?`<span class="stat-u">${u}</span>`:''}</div></div>`).join('')}
       </div>
       ${annCardsHtml()}
       <div class="hero-panel">
