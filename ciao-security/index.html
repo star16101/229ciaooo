@@ -700,6 +700,9 @@
   .topbar-c .top-right .island-mascot{width:80px!important;margin:-14px 0 -14px 0!important;}
 .tag.rcpt-tag{background:rgba(182,106,106,.14)!important;color:#B66A6A!important;font-weight:700;border:1px solid rgba(182,106,106,.28);}
 .rcpt-warn{background:rgba(182,106,106,.14);color:#B66A6A;border:1px solid rgba(182,106,106,.28);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:700;line-height:1.5;}
+.statboard{background:var(--bg);border-radius:30px;box-shadow:var(--raise);padding:14px 20px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+.stat-l{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:2px;}
+.stat-v{font-size:26px;font-weight:700;line-height:1.1;color:#B58A12;font-family:'Noto Sans TC',sans-serif;}
 </style>
 </head>
 <body>
@@ -1584,7 +1587,7 @@ function msgHtml(){
 // ---------- REFERRAL SIGNUP (public, no login needed) ----------
 function renderReferralSignup(){
   app.innerHTML = `
-    <div class="topbar"><div class="brand"><div class="title serif">島嶼團隊出品</div><div class="sub">朋友推薦登記</div></div>${mascotHtml()}</div>
+    <div class="topbar"><div class="brand"><div class="title serif">島嶼團隊</div><div class="sub">朋友推薦登記</div></div>${mascotHtml()}</div>
     <div class="content">
       ${msgHtml()}
       ${state.referralSubmitted ? `
@@ -1628,8 +1631,8 @@ function renderLogin(){
   app.innerHTML = `
     <div class="login-hero">
       ${mascotHtml().replace('island-mascot','island-mascot mascot-lg')}
-      <div class="login-title serif">島嶼團隊出品</div>
-      <div class="login-sub">保單彙整・一目瞭然 By 蕎蕎</div>
+      <div class="login-title serif">島嶼團隊</div>
+      <div class="login-sub">保單彙整・一目瞭然・蕎蕎客戶專屬</div>
     </div>
     <div class="content">
       <div class="panel">
@@ -1772,7 +1775,7 @@ function renderAdminHome(){
 
   app.innerHTML = `
     <div class="topbar">
-      <div class="brand"><div class="title serif">島嶼團隊出品</div><div class="sub">${esc(state.profile.display_name||'管理者')}</div></div>
+      <div class="brand"><div class="title serif">島嶼團隊</div><div class="sub">${esc(state.profile.display_name||'管理者')}</div></div>
       <div class="top-right">${mascotHtml()}<div class="icon-btn" id="logout">登出</div></div>
     </div>
     <div class="content">
@@ -2856,6 +2859,9 @@ function confirmDeleteCoverage(btn, id){
 
 // ---------- CLIENT HOME ----------
 
+// 數字看板：客戶數超過300、被推薦超過10次時，再往上調整
+const BRAND_STATS = {years:'3+', policies:'100+', clients:'300+', referrals:'10'};
+
 function annCardsHtml(){
   const list = state.myAnns||[]; if(!list.length) return '';
   const reads = state.myAnnReads||new Set();
@@ -2964,6 +2970,9 @@ function renderClientHome(){
           <div class="about-item"><i></i><div><div class="ab-t">服務超過100個家庭🏠</div></div></div>
           <div class="about-item"><i></i><div><div class="ab-t hl">MDRT 2024–26（目標拿終身會員）</div><div class="ab-s">國際銅龍獎｜亞太菁英獎</div></div></div>
         </div>
+      </div>
+      <div class="statboard">
+        ${[['服務年資（年）',BRAND_STATS.years],['保單彙整（次）',BRAND_STATS.policies],['服務客戶',BRAND_STATS.clients],['轉介紹（次）',BRAND_STATS.referrals]].map(([l,v])=>`<div class="stat-i"><div class="stat-l">${l}</div><div class="stat-v">${v}</div></div>`).join('')}
       </div>
       ${annCardsHtml()}
       <div class="hero-panel">
