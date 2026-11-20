@@ -700,10 +700,10 @@
   .topbar-c .top-right .island-mascot{width:80px!important;margin:-14px 0 -14px 0!important;}
 .tag.rcpt-tag{background:rgba(182,106,106,.14)!important;color:#B66A6A!important;font-weight:700;border:1px solid rgba(182,106,106,.28);}
 .rcpt-warn{background:rgba(182,106,106,.14);color:#B66A6A;border:1px solid rgba(182,106,106,.28);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:700;line-height:1.5;}
-.statboard{background:var(--bg);border-radius:30px;box-shadow:var(--raise);padding:9px 20px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;}
+.statboard{background:var(--bg);border-radius:30px;box-shadow:var(--raise);padding:12px 24px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;}
 .stat-l{font-size:10.5px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:0;line-height:1.3;}
-.stat-v{font-size:15px;font-weight:700;line-height:1.3;color:#B58A12;font-family:'Noto Sans TC',sans-serif;}
-.stat-v sup{font-size:9px;font-weight:700;vertical-align:top;position:relative;top:-1px;margin-left:1px;}
+.stat-v{font-size:20px;font-weight:700;line-height:1.3;color:#C98A12;font-family:'Noto Sans TC',sans-serif;}
+.stat-v sup{font-size:11px;font-weight:700;vertical-align:top;position:relative;top:-1px;margin-left:1px;}
 </style>
 </head>
 <body>
@@ -2973,7 +2973,7 @@ function renderClientHome(){
         </div>
       </div>
       <div class="statboard">
-        ${[['服務年資（年）',BRAND_STATS.years],['保單彙整（次）',BRAND_STATS.policies],['服務客戶',BRAND_STATS.clients],['轉介紹（次）',BRAND_STATS.referrals]].map(([l,v])=>`<div class="stat-i"><div class="stat-l">${l}</div><div class="stat-v">${String(v).replace(/\+$/,'')}${/\+$/.test(v)?'<sup>+</sup>':''}</div></div>`).join('')}
+        ${[['服務客戶',BRAND_STATS.clients],['轉介紹（次）',BRAND_STATS.referrals]].map(([l,v])=>`<div class="stat-i"><div class="stat-l">${l}</div><div class="stat-v">${String(v).replace(/\+$/,'')}${/\+$/.test(v)?'<sup>+</sup>':''}</div></div>`).join('')}
       </div>
       ${annCardsHtml()}
       <div class="hero-panel">
