@@ -703,7 +703,7 @@
   .ann-card{margin-bottom:10px;padding:14px 16px;} .ann-card.ann-new{border:1.5px solid #E9B44C;}
   .topbar-c .top-right .island-mascot{width:80px!important;margin:-14px 0 -14px 0!important;}
 .tag.rcpt-tag{background:rgba(182,106,106,.14)!important;color:#B66A6A!important;font-weight:700;border:1px solid rgba(182,106,106,.28);}
-.rcpt-warn{background:rgba(182,106,106,.14);color:#B66A6A;border:1px solid rgba(182,106,106,.28);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:700;line-height:1.5;}
+.rcpt-warn{background:rgba(150,140,130,.12);color:var(--ink);border:1px solid rgba(150,140,130,.22);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:700;line-height:1.5;}
 .statboard{background:var(--bg);border-radius:30px;box-shadow:var(--raise);padding:14px 12px;margin-bottom:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0 8px;}
 .stat-i{text-align:center;min-width:0;}
 .stat-l{display:block;font-size:10.5px;color:var(--ink-soft);letter-spacing:.04em;line-height:1;padding:6px 0;margin:0 0 7px;border-radius:12px;box-shadow:var(--press);white-space:nowrap;}
@@ -2541,19 +2541,30 @@ function bindParsedCoverageDraftEvents(){
 }
 
 function rcptWarnHtml(){
-  const seen = {醫療實支:{o:0,c:0}, 意外實支:{o:0,c:0}};
+  const seen = {醫療實支:{o:new Set(),c:new Set()}, 意外實支:{o:new Set(),c:new Set()}};
   (state.policies||[]).forEach(p=>{
     [{product_name:p.product_name}, ...(state.ridersByPolicy[p.id]||[])].forEach(r=>{
       const nm = String(r.product_name||'');
       const m = nm.match(/[(（](正本|副本)[)）]\s*$/);
       if(!m) return;
       const k = (/傷害|新長安|龍好意/.test(nm) || (/醫療限額/.test(nm) && !/住院/.test(nm))) ? '意外實支' : '醫療實支';
-      seen[k][m[1]==='正本'?'o':'c']++;
+      seen[k][m[1]==='正本'?'o':'c'].add(p.insurer||p.id);
     });
   });
-  const only = Object.keys(seen).filter(k=>seen[k].c>0 && seen[k].o===0);
-  if(!only.length) return '';
-  return `<div class="rcpt-warn">⚠️ 提醒：身上的${only.join('、')}只有副本，沒有持有正本</div>`;
+  const CN = ['零','一','兩','三','四','五','六','七','八','九','十'];
+  const cn = n => CN[n] ?? String(n);
+  const desc = ({o,c}) => {
+    const no=o.size, nc=c.size;
+    if(!no && !nc) return '';
+    if(nc && no) return `有${cn(nc)}家副本與${cn(no)}家正本收據理賠`;
+    if(nc) return nc===1 ? '有一家副本收據理賠' : `${cn(nc)}家都是副本收據理賠`;
+    return no===1 ? '有一家正本收據理賠' : `${cn(no)}家都是正本收據理賠`;
+  };
+  const dm = desc(seen.醫療實支), da = desc(seen.意外實支);
+  if(!dm && !da) return '';
+  const lines = (dm && dm===da) ? [`身上的醫療實支、意外實支${dm}`]
+    : [dm && `身上的醫療實支${dm}`, da && `身上的意外實支${da}`].filter(Boolean);
+  return `<div class="rcpt-warn">${lines.map(t=>`<div>📁 ${t}</div>`).join('')}</div>`;
 }
 
 function renderPolicyCard(p, riders, editable, compact, coverageCount){
