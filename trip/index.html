@@ -247,6 +247,10 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--ink);display:inli
 .ftile.on .fn{background:#fff}
 .fno{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:var(--t-yellow);font-size:11px;margin-right:5px;vertical-align:1px}
 .frow{cursor:pointer}
+.frbtn{display:flex;gap:5px;margin-top:6px;padding-left:42px}
+.frbtn>*{flex:1 1 0;min-width:0;min-height:32px!important;padding:2px 4px!important;font-size:12px!important;border-radius:9px!important;gap:3px!important;white-space:nowrap}
+.frbtn>*[data-fedit]{flex:0 0 32px}
+.frbtn svg{width:14px;height:14px}
 .ended{text-align:center;padding:26px 16px}
 .edit{display:none!important}body.editing .edit{display:inline-flex!important}
 .editb{display:none!important}body.editing .editb{display:flex!important}
@@ -1097,13 +1101,13 @@ const FSEED=[{n:"正忠排骨飯 中山店",cat:"bento",city:"高雄市",distric
 function fdata(city,dist){const base=FOOD.DATA[city]?.[dist],mine=(FOODX.items||[]).filter(x=>x.city===city&&x.district===dist);if(!base&&!mine.length)return null;
  const o={};if(base)for(const k in base)o[k]=base[k].slice();mine.forEach(x=>(o[x.cat]=o[x.cat]||[]).push({n:x.n,r:x.r??null,c:x.c||0,addr:x.addr||"",pid:"mine-"+x.id,lat:x.lat,lng:x.lng,occ:x.occ||[],mine:x.id,approx:x.approx}));return o}
 const saveFoodX=()=>rpc("trip_save",{p_pass:pass,p_id:"_food",p_data:FOODX}).catch(()=>toast("沒有存到，請檢查網路"));
-async function seedFood(){if(FOODX.seeded||!canEdit)return;FOODX.items=FOODX.items||[];for(const x of FSEED){if(FOODX.items.some(i=>i.n===x.n))continue;let c=null;try{c=await nomi(x.addr,[22.63,120.30],.1)}catch(e){}FOODX.items.push({id:uid(),...x,lat:c?.[0],lng:c?.[1],approx:1});await sleep(1100)}FOODX.seeded=1;saveFoodX()}
+async function seedFood(){if(!canEdit||FOODX.v2)return;const names=FSEED.map(x=>x.n);FOODX.items=(FOODX.items||[]).filter(i=>!(i.approx&&names.includes(i.n)));FOODX.v2=1;FOODX.seeded=1;saveFoodX()}
 const FS={city:"高雄市",district:"新興區",mode:"cat",key:null,sort:"rating",home:"home",ref:null};
 let FLM=null,FMK=[],backView="home";
-function loadFood(){return new Promise((ok,no)=>{if(window.FOOD)return ok();const s=document.createElement("script");s.src="food.js?v=1";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+function loadFood(){return new Promise((ok,no)=>{if(window.FOOD)return ok();const s=document.createElement("script");s.src="food.js?v=2";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 async function openFood(){if(view!=="food")backView=view;view="food";showView();scrollTo(0,0);
  if(!window.FOOD){$("#v-food").innerHTML=`<div class="card"><div class="small">載入美食清單中…</div></div>`;try{await loadFood()}catch(e){$("#v-food").innerHTML=`<div class="card"><div class="small">載入失敗，請檢查網路後再試</div></div>`;return}}
- if(!FS.ref&&FS.home==="home")FS.ref=FOOD.HOME;renderFood();if(!FOODX.seeded)seedFood().then(()=>view==="food"&&renderFood())}
+ if(!FS.ref&&FS.home==="home")FS.ref=FOOD.HOME;renderFood();if(!FOODX.v2)seedFood().then(()=>view==="food"&&renderFood())}
 const FMEMO=()=>LS.get("fmemo",{});
 const fsearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
 const flabel=()=>FS.mode==="cat"?(FOOD.CATS.find(c=>c.key===FS.key)||{}).label:FS.mode==="occ"?(FOOD.OCCASIONS.find(o=>o.key===FS.key)||{}).label:(FOOD.FORMS.find(f=>f.key===FS.key)||{}).label;
@@ -1131,10 +1135,10 @@ function renderFood(){const F=FOOD,dd=fdata(FS.city,FS.district),list=fmatches()
   <div class="map" id="fmap" style="height:200px;margin-bottom:6px"></div>
   ${list.map((it,i)=>{const d=fdist(it),m=memos[it.pid],occ=[...new Set([...(it.occ||[]),...(F.CDO[it.catKey]||[])])].map(o=>F.OCCASIONS.find(x=>x.key===o)?.label).filter(Boolean);
    return `<div class="place frow" data-fi="${i}"><div class="top"><div class="ic ficon" style="background:var(--t-coral)">${F.ICONS[it.catKey]||""}</div><div class="body"><b>${i<30&&it.lat!=null?`<span class="fno">${i+1}</span>`:""}${esc(it.n)}</b>
-   <div class="small">${it.r!=null?`<span style="color:#b8862b">★ ${it.r.toFixed(1)}</span>（${it.c.toLocaleString()}）・`:`<span class="chip" style="font-size:11px;background:var(--t-yellow)">自己加的</span> `}${esc(it.addr||"")}${it.approx?"（位置約略）":""}${isFinite(d)?`・${d.toFixed(1)} km${d<=4?`・走路約 ${Math.max(1,Math.round(d*16))} 分`:""}`:""}</div>
+   <div class="small">${it.r!=null?`<span style="color:#b8862b">★ ${it.r.toFixed(1)}</span>（${it.c.toLocaleString()}）・`:""}${esc(it.addr||"")}${isFinite(d)?`・${d.toFixed(1)} km${d<=4?`・走路約 ${Math.max(1,Math.round(d*16))} 分`:""}`:""}</div>
    ${occ.length?`<div class="chips" style="margin:4px 0 0">${occ.slice(0,5).map(o=>`<span class="chip" style="font-size:11px;background:var(--t-green)">${esc(o)}</span>`).join("")}</div>`:""}
    ${m?`<div class="memo" style="margin-top:6px;font-size:13px">跟 <b>${esc(m.name||"（沒填名字）")}</b> 來過：${esc(m.note||"")}<br><span class="small">${esc(m.updated||"")}</span></div>`:""}</div></div>
-   <div class="btnrow"><a class="btn sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.n+" "+FS.city+FS.district)}&query_place_id=${it.pid}" target="_blank" rel="noopener">${ic("i-pin")}店家</a><a class="btn sm" href="${fsearch((it.addr||"")+" "+FS.city+FS.district+" 停車場")}" target="_blank" rel="noopener">${ic("i-park")}停車</a>${it.mine?`<button class="sm" data-fedit="${it.mine}">${ic("i-pen")}編輯</button>`:""}<button class="sm" data-fmemo="${i}">${ic("i-pen")}${m?"改備忘":"備忘"}</button>${T()?`<button class="sm" data-fadd="${i}" aria-label="加到口袋名單">${ic("i-plus")}口袋</button>`:""}</div></div>`}).join("")}
+   <div class="frbtn"><a class="btn" href="${/^mine-/.test(it.pid)?fsearch(it.n+" "+FS.city+FS.district):`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.n+" "+FS.city+FS.district)}&query_place_id=${it.pid}`}" target="_blank" rel="noopener">${ic("i-pin")}店家</a><a class="btn" href="${fsearch((it.addr||"")+" "+FS.city+FS.district+" 停車場")}" target="_blank" rel="noopener">${ic("i-park")}停車</a><button data-fmemo="${i}">${ic("i-pen")}備忘</button>${T()?`<button data-fadd="${i}">${ic("i-plus")}口袋</button>`:""}${it.mine?`<button data-fedit="${it.mine}" aria-label="編輯店家">${ic("i-tool")}</button>`:""}</div></div>`}).join("")}
   <div class="small" style="margin-top:6px">Google 評分僅供參考，營業時間以店家公告為準；距離是直線估算；備忘只存在這支手機</div></div>`:""}
  <div class="acts2"><button data-fpark>${ic("i-park")}找我附近的停車場</button></div>`;
  fbind(list);if(FS.key&&list.length)setTimeout(()=>drawFoodMap(list),30)}

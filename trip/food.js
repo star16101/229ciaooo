@@ -684,6 +684,14 @@ const DISTRICTS = {
   "金門縣": ["金城鎮","金湖鎮","金沙鎮","金寧鄉","烈嶼鄉","烏坵鄉"],
   "連江縣": ["南竿鄉","北竿鄉","莒光鄉","東引鄉"],
 };
+
+/* 新興區 便當補充（Google 地圖 2026/11） */
+(function(d){(d.bento=d.bento||[]).push(
+ {n:"正忠排骨飯 中山店",r:3.7,c:1069,addr:"中山一路",pid:"ChIJHwOQQosEbjQRz4QYnLFy-bw",lat:22.6358623,lng:120.3025882,occ:[]},
+ {n:"正忠排骨飯 六合店",r:3.5,c:874,addr:"六合一路",pid:"ChIJweq1kY0EbjQRkN90ZQhrfcg",lat:22.6324721,lng:120.3081379,occ:[]},
+ {n:"正忠排骨飯 七賢店",r:3.7,c:996,addr:"七賢二路",pid:"ChIJeVABEooEbjQRmDcUGAZaSdE",lat:22.6337461,lng:120.2981832,occ:[]},
+ {n:"正忠排骨飯 五福店",r:3.5,c:998,addr:"五福二路",pid:"ChIJbR-fdoUEbjQR-O9E-dh3LKo",lat:22.6247556,lng:120.3063437,occ:[]},
+ {n:"今天便當",r:4.0,c:230,addr:"五福二路",pid:"ChIJIfN-NEEFbjQR-JuyraSeDH8",lat:22.6248432,lng:120.3057052,occ:[]});})(DATA["高雄市"]["新興區"]);
 const FORMS = [
   { key:"rice", label:"飯", term:"飯類餐廳", cats:["bento","casual","japanese"] },
   { key:"noodle", label:"麵", term:"麵食", cats:["noodle","italian"] },
