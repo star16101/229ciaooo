@@ -1243,7 +1243,7 @@ const GAP_ITEMS = [
     tip:'住院、手術的自費與雜費依收據核實給付，補健保以外的差額。' },
   { id:'daily', icon:'🛏️', name:'住院日額／手術', short:'日額・手術',
     parts:T=>[
-      { label:'病房費（每日）', re:/^病房費/, target:T.daily, daily:true },
+      { label:'病房費（每日）', re:/^病房費(?!\(實支)/, target:T.daily, daily:true },
       { label:'住院手術', re:/^住院(特定)?手術/, target:10 },
     ],
     tip:'住院期間每日定額給付，手術依項目給付，補住院期間的生活開銷。' },
