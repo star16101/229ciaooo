@@ -682,7 +682,7 @@ function renderHome(t){
 function flightsCard(t){
  const fl=t.flights.map((f,i)=>`<div class="fl"><div style="display:flex;align-items:center"><span class="tag ${f.dir==="回程"?"back":""}">${ic("i-plane")}${esc(f.dir||"航班")}・${md(f.date)}（${wk(f.date)}）</span><button class="edit sm" style="margin:-10px 0 0 auto" data-act="editFlight" data-i="${i}">編輯</button></div>
   <div class="flight"><div><div class="t num">${esc(f.dep||"--:--")}</div><div class="c">${esc(f.from)}</div></div><div class="arc">${ic("i-plane")}<div>${esc(f.dur||"")}</div></div><div style="text-align:right"><div class="t num">${esc(f.arr||"--:--")}</div><div class="c">${esc(f.to)}</div></div></div>
-  <div class="chips">${f.no?`<span class="chip">${esc(f.no)}</span>`:""}${f.note?`<span class="chip">${esc(f.note)}</span>`:""}<span class="chip">當地時間</span></div></div>`).join("");
+  <div class="chips">${f.no?`<span class="chip">${esc(f.no)}</span>`:""}${f.note?`<span class="chip">${esc(f.note)}</span>`:""}<span class="chip">當地時間</span></div>${f.no&&parseFlightNo(f.no)?`<button class="sm" style="width:100%;margin-top:4px" data-act="track" data-i="${i}">${ic("i-plane")}這班飛機現在在哪</button>`:""}</div>`).join("");
  const ref=t.meta?.flight;
  if(!fl&&!canEdit&&!ref)return"";
  return `<div class="card"><h2>${dot("i-plane")}${t.country==="台灣"?"交通資訊":"航班資訊"}<button class="edit sm" style="margin-left:auto" data-act="editFlight" data-i="-1">＋ 新增</button></h2>${fl||(ref?`<div class="row"><span>參考</span><span><b>${esc(ref.time)}</b>・${esc(ref.from)}</span></div><div class="small">${esc(ref.detail)}（班次依季節調整，訂票前請再確認）</div>`:`<div class="small">還沒有航班資料</div>`)}</div>`}
@@ -1021,8 +1021,8 @@ const ACT={
   ["#f_start","#f_end","#f_dest"].forEach(s=>$(s).addEventListener("input",chk));chk()},
  editFlight(a){const i=+a.dataset.i,t=T(),f=i>=0?t.flights[i]:{dir:t.flights.length?"回程":"去程",date:t.flights.length?t.end:t.start};
   form(i>=0?"編輯航班":"新增航班",[{k:"dir",label:"類型",type:"select",opts:["去程","回程","轉機","高鐵／火車","船班"],half:1},{k:"date",label:"日期",type:"date",half:1},{k:"dep",label:"出發",type:"time",half:1},{k:"arr",label:"抵達",type:"time",half:1},
-   {k:"from",label:"出發地",ph:"KHH 高雄小港",half:1},{k:"to",label:"抵達地",ph:"CJU 濟州",half:1},{k:"no",label:"班次號碼",half:1},{k:"dur",label:"時間",ph:"2h20m",half:1},{k:"note",label:"備註",ph:"託運 20kg、第一航廈"}],
-   f,o=>mut(t=>{i>=0?Object.assign(t.flights[i],o):t.flights.push(o);t.flights.sort((a,b)=>((a.date||"")+(a.dep||"")).localeCompare((b.date||"")+(b.dep||"")))}),i>=0?()=>mut(t=>t.flights.splice(i,1)):null)},
+   {k:"from",label:"出發地",ph:"KHH 高雄小港",half:1},{k:"to",label:"抵達地",ph:"CJU 濟州",half:1},{k:"no",label:"班次號碼",ph:"MM32",half:1},{k:"dur",label:"時間",ph:"2h20m",half:1},{k:"note",label:"備註",ph:"託運 20kg、第一航廈"}],
+   f,o=>mut(t=>{i>=0?Object.assign(t.flights[i],o):t.flights.push(o);t.flights.sort((a,b)=>((a.date||"")+(a.dep||"")).localeCompare((b.date||"")+(b.dep||"")))}),i>=0?()=>mut(t=>t.flights.splice(i,1)):null,`<label class="btn" style="width:100%;margin-bottom:4px">${ic("i-cam")}拍登機證自動帶入<input type="file" accept="image/*" id="bpIn" hidden></label><div class="note2" id="bpNote" style="margin:2px 0 10px">或只輸入班次號碼，會自動查出發地和抵達地</div>`);bindFlightForm()},
  editHotel(a){const i=+a.dataset.i,t=T();form(i>=0?"編輯住宿":"新增住宿",[{k:"name",label:"飯店名稱"},{k:"in",label:"入住日",type:"date",half:1},{k:"out",label:"退房日",type:"date",half:1},{k:"inout",label:"入住／退房時間",ph:"15:00 入住・11:00 退房"},{k:"rooms",label:"房間",ph:"2 間房"},{k:"phone",label:"電話",type:"tel"},{k:"addr",label:"地址或地圖搜尋字"},{k:"note",label:"備註",ph:"訂房代號、早餐時間"}],
   i>=0?t.hotels[i]:{in:t.start,out:t.end},o=>{if(!o.name)return false;mut(t=>{i>=0?Object.assign(t.hotels[i],o):t.hotels.push(o)})},i>=0?()=>mut(t=>t.hotels.splice(i,1)):null)},
  editSpot(a){const i=+a.dataset.i,t=T();form(i>=0?"編輯口袋名單":"新增口袋名單",[{k:"name",label:"名稱"},{k:"kind",label:"類型",type:"select",opts:[["spot","景點"],["meal","美食"],["other","其他"]],half:1},{k:"type",label:"分類",ph:"咖啡廳、晚餐",half:1},{k:"note",label:"說明"},{k:"price",label:"價位",half:1},{k:"tip",label:"停留／提醒",half:1},{k:"q",label:"地圖搜尋字（選填）"},{k:"must",label:"標成「必去」",type:"check"}],
@@ -1148,6 +1148,58 @@ function fbind(list){const v=$("#v-food");
  v.querySelectorAll("[data-fadd]").forEach(b=>b.onclick=()=>{const it=list[+b.dataset.fadd],cl=(FOOD.CATS.find(c=>c.key===it.catKey)||{}).label||"";
   mut(t=>{if(t.spots.some(s=>s.name===it.n))return;t.spots.push({id:uid(),kind:it.catKey==="cafe"||it.catKey==="drink"?"meal":"meal",name:it.n,type:cl,note:`★${it.r.toFixed(1)}（${it.c.toLocaleString()}）・${it.addr||""}`,q:`${it.n} ${FS.city}${FS.district}`,from:"覓食手帳"})});toast(`已加到「${T().name}」口袋名單`)});
 }
+
+/* ---------- flight tracking + boarding-pass scan ---------- */
+const AL_ICAO={MM:"APJ",CI:"CAL",BR:"EVA",JX:"SJX",IT:"TTW",GK:"JJP","7C":"JJA",TW:"TWB",LJ:"JNA",BX:"ABL",KE:"KAL",OZ:"AAR",JL:"JAL",NH:"ANA",ZE:"ESR",UO:"HKE",CX:"CPA",VZ:"TVJ",FD:"AIQ",AK:"AXM",TR:"TGW","5J":"CEB",SQ:"SIA",TG:"THA",VN:"HVN",BC:"SKY",ZG:"TZP",MU:"CES",CA:"CCA",CZ:"CSN",HX:"CRK",AE:"MDA",B7:"UIA","3K":"JSA",D7:"XAX",OD:"MXD",UA:"UAL",DL:"DAL",MF:"CXA",HO:"DKH",PR:"PAL",MH:"MAS",GA:"GIA",QF:"QFA",NX:"AMU",HB:"HGB",RF:"EOK",YP:"APZ",FM:"CSH","9C":"CQH",DD:"NOK",XJ:"TAX",SL:"TLM",AA:"AAL",AC:"ACA",EK:"UAE",QR:"QTR",TK:"THY",KL:"KLM",AF:"AFR",LH:"DLH",BA:"BAW"};
+const TW_AP=/^(TPE|TSA|KHH|RMQ|TNN|CYI|HUN|TTT|MZG|KNH|LZN|MFK|GNI|KYD|CMJ|WOT)$/;
+function parseFlightNo(s){const m=String(s||"").toUpperCase().replace(/[\s-]/g,"").match(/^([A-Z0-9]{2})0*(\d{1,4})[A-Z]?$/);if(!m||/^\d\d$/.test(m[1]))return null;const n=+m[2];return{iata:m[1]+n,icao:AL_ICAO[m[1]]?AL_ICAO[m[1]]+n:null}}
+async function routeOf(p){const get=async cs=>{try{const r=await fetch("https://api.adsbdb.com/v0/callsign/"+cs);if(!r.ok)return null;return(await r.json()).response?.flightroute||null}catch(e){return null}};return(p.icao&&await get(p.icao))||await get(p.iata)}
+async function liveOf(cs){try{const r=await fetch("/api/flight?cs="+cs);if(r.ok){const j=await r.json();if(j.ac)return j}}catch(e){}
+ try{const r=await fetch("https://api.adsb.lol/v2/callsign/"+cs);if(r.ok){const d=await r.json();return{ac:(d.ac||[]).filter(a=>a.lat!=null).map(a=>({lat:a.lat,lon:a.lon,alt:a.alt_baro,gs:a.gs,track:a.track}))}}}catch(e){}return null}
+function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`)&&loadScript[src])return ok();const s=document.createElement("script");s.src=src;s.onload=()=>{loadScript[src]=1;ok()};s.onerror=no;document.head.appendChild(s)})}
+const apName=a=>a?`${a.iata_code} ${a.municipality?.replace(/\s*\(.*\)/,"")||a.name}`:"";
+let TRK=null;
+ACT.track=async a=>{const t=T(),f=t.flights[+a.dataset.i],p=parseFlightNo(f?.no);if(!p){toast("先在航班裡填班次號碼，例如 MM32");return}
+ openSheet(`<h2 style="font-size:18px">${ic("i-plane")}${esc(f.no)}<span class="r" id="trkSt">查詢中…</span></h2>
+ <div class="map" id="trk" style="height:240px"></div><div id="trkInfo" style="margin:10px 2px" class="small">正在找這班飛機…</div>
+ <div class="acts2"><a class="btn" href="https://www.flightradar24.com/data/flights/${p.iata.toLowerCase()}" target="_blank" rel="noopener">Flightradar24</a><a class="btn" href="https://www.flightaware.com/live/flight/${p.icao||p.iata}" target="_blank" rel="noopener">FlightAware</a></div>
+ <div class="small" style="margin-top:8px">位置來自民間 ADS-B 接收站，約 30 秒更新一次；起降時間請以航空公司為準</div><div class="acts2"><button data-close>關閉</button></div>`);
+ const fr=await routeOf(p);if(!$("#trk"))return;const cs=p.icao||fr?.callsign_icao||p.iata;
+ if(TRK){TRK.remove();TRK=null}TRK=L.map("trk",{scrollWheelZoom:false,attributionControl:false});L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:12}).addTo(TRK);
+ const o=fr?.origin,d=fr?.destination,pts=[];
+ if(o&&d){pts.push([o.latitude,o.longitude],[d.latitude,d.longitude]);L.polyline(pts,{color:"#3E3A39",weight:2,opacity:.5,dashArray:"4 6"}).addTo(TRK);
+  [o,d].forEach((x,k)=>L.marker([x.latitude,x.longitude],{icon:L.divIcon({className:"",html:`<div class="pin" style="width:auto;padding:0 6px;border-radius:8px;background:${k?"#A8D3E6":"#F6D27A"}">${x.iata_code}</div>`,iconSize:[40,22],iconAnchor:[20,11]})}).addTo(TRK))}
+ if(pts.length)TRK.fitBounds(pts,{padding:[30,30]});else TRK.setView([25,121],5);
+ let plane=null;
+ const tick=async()=>{if(!$("#trk")){clearInterval(tick.h);return}const lv=await liveOf(cs);if(!$("#trk"))return;const ac=lv?.ac?.[0];
+  if(!ac){$("#trkSt").textContent=lv?"沒有在空中":"暫時查不到";$("#trkInfo").innerHTML=lv?`這班現在沒有在空中（還沒起飛，或已經降落）。起飛後這裡會顯示飛機位置。${o&&d?`<br>航線：${esc(apName(o))} → ${esc(apName(d))}`:""}`:"即時位置服務暫時連不上，可以先用下面的 Flightradar24 看";return}
+  const ll=[ac.lat,ac.lon],gnd=ac.alt==="ground";const html=`<div style="transform:rotate(${(ac.track||0)-45}deg);font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">✈️</div>`;
+  if(plane)plane.setLatLng(ll).setIcon(L.divIcon({className:"",html,iconSize:[26,26],iconAnchor:[13,13]}));else plane=L.marker(ll,{icon:L.divIcon({className:"",html,iconSize:[26,26],iconAnchor:[13,13]}),zIndexOffset:999}).addTo(TRK);
+  if(!tick.fit){tick.fit=1;TRK.fitBounds([...pts,ll],{padding:[30,30]})}
+  const kmh=ac.gs?Math.round(ac.gs*1.852):0,left=d?hav(ll,[d.latitude,d.longitude]):null,eta=left&&kmh>150?Math.round(left/kmh*60):null;
+  $("#trkSt").textContent=gnd?"在地面上":"飛行中";
+  $("#trkInfo").innerHTML=gnd?`飛機在地面上${o&&hav(ll,[o.latitude,o.longitude])<5?`（${esc(o.iata_code)} 機場，準備起飛）`:d&&left<5?`（已抵達 ${esc(d.iata_code)}）`:""}`
+   :`<b style="font-size:15px;color:var(--ink)">${left!=null?`離 ${esc(apName(d))} 還有 ${Math.round(left)} 公里`:"飛行中"}${eta?`，約 ${eta>=60?`${Math.floor(eta/60)} 小時 ${eta%60} 分`:`${eta} 分`}後抵達`:""}</b><br>高度約 ${nf(Math.round((+ac.alt||0)*0.3048))} 公尺・時速約 ${nf(kmh)} 公里${ac.type?`・機型 ${esc(ac.type)}`:""}`};
+ clearInterval(tick.h);await tick();tick.h=setInterval(tick,30000)};
+
+async function decodeBP(file){await loadScript("https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js");const Z=window.ZXing,h=new Map();
+ h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.PDF_417,Z.BarcodeFormat.AZTEC,Z.BarcodeFormat.QR_CODE,Z.BarcodeFormat.DATA_MATRIX]);h.set(Z.DecodeHintType.TRY_HARDER,true);
+ const rd=new Z.BrowserMultiFormatReader(h),img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(file)});
+ const tries=[1600,1100,2200];for(const m of tries){const k=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  try{const r=await rd.decodeFromImageUrl(c.toDataURL("image/png"));if(r)return r.getText()}catch(e){}}return null}
+function parseBCBP(s){if(!s||!/^M[1-9]/.test(s)||s.length<58)return null;const yd=+s.slice(44,47),car=s.slice(36,39).trim(),num=s.slice(39,44).trim().replace(/^0+/,"");
+ const td=new Date(todayTW()+"T00:00:00");let y=td.getFullYear(),dt=new Date(y,0,yd);if(dt<new Date(td-60*864e5))dt=new Date(y+1,0,yd);
+ return{no:car+num,from:s.slice(30,33),to:s.slice(33,36),date:yd?`${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`:"",seat:s.slice(48,52).trim().replace(/^0+(?=\d)/,""),pnr:s.slice(23,30).trim()}}
+function bindFlightForm(){const no=$("#f_no"),hint=$("#bpNote");if(!no)return;
+ const fillRoute=async()=>{const p=parseFlightNo(no.value);if(!p)return;hint.textContent="查航線中…";const fr=await routeOf(p);if(!fr){hint.textContent="查不到這個班次的航線，請自己填出發地和抵達地";return}
+  if(!$("#f_from").value)$("#f_from").value=apName(fr.origin);if(!$("#f_to").value)$("#f_to").value=apName(fr.destination);hint.textContent=`✓ ${fr.airline?.name||""}・${apName(fr.origin)} → ${apName(fr.destination)}`};
+ no.addEventListener("change",fillRoute);
+ $("#bpIn").addEventListener("change",async e=>{const file=e.target.files[0];e.target.value="";if(!file)return;hint.textContent="讀取登機證條碼中…";
+  let txt=null;try{txt=await decodeBP(file)}catch(err){}const b=parseBCBP(txt);
+  if(!b){hint.textContent="讀不到條碼。請拍清楚登機證上的條碼（PDF417／QR），或直接輸入班次號碼";return}
+  no.value=b.no;if(b.date)$("#f_date").value=b.date;$("#f_dir").value=TW_AP.test(b.from)?"去程":TW_AP.test(b.to)?"回程":$("#f_dir").value;
+  $("#f_from").value=b.from;$("#f_to").value=b.to;if(b.seat){const n=$("#f_note");if(!n.value.includes(b.seat))n.value=[`座位 ${b.seat}`,n.value].filter(Boolean).join("、")}
+  hint.textContent=`✓ 從登機證帶入 ${b.no}・${b.from}→${b.to}${b.seat?`・座位 ${b.seat}`:""}，起降時間請自己補`;const p=parseFlightNo(b.no);if(p){const fr=await routeOf(p);if(fr){$("#f_from").value=apName(fr.origin);$("#f_to").value=apName(fr.destination)}}})}
 
 /* ---------- proof photos (票據・訂位證明) ---------- */
 const proof={it:null};
