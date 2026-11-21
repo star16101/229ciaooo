@@ -695,6 +695,8 @@
   .topbar-c .brand .title{font-size:21px!important;}
   .topbar-c .top-right .island-mascot{width:62px!important;margin:-8px 0 -8px 0!important;}
   .topbar-c .icon-btn{padding:revert!important;font-size:revert!important;}
+  .rcpt-row{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px;}
+  .rcpt-pill{border-radius:999px;padding:10px 16px;font-size:13px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm);white-space:nowrap;}
   .ann-chev{margin-left:auto;padding-left:10px;color:var(--ink-soft);font-size:14px;}
   .chip.jump-cta{position:relative;overflow:hidden;background:var(--grad)!important;color:#fff!important;font-weight:700;box-shadow:6px 6px 14px rgba(214,150,40,.4),-5px -5px 12px #fff!important;}
   .chip.jump-cta::after{content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:rotate(20deg);animation:ctaShine 4.2s ease-in-out infinite;}
@@ -2551,20 +2553,9 @@ function rcptWarnHtml(){
       seen[k][m[1]==='正本'?'o':'c'].add(p.insurer||p.id);
     });
   });
-  const CN = ['零','一','兩','三','四','五','六','七','八','九','十'];
-  const cn = n => CN[n] ?? String(n);
-  const desc = ({o,c}) => {
-    const no=o.size, nc=c.size;
-    if(!no && !nc) return '';
-    if(nc && no) return `有${cn(nc)}家副本與${cn(no)}家正本收據理賠`;
-    if(nc) return nc===1 ? '有一家副本收據理賠' : `${cn(nc)}家都是副本收據理賠`;
-    return no===1 ? '有一家正本收據理賠' : `${cn(no)}家都是正本收據理賠`;
-  };
-  const dm = desc(seen.醫療實支), da = desc(seen.意外實支);
-  if(!dm && !da) return '';
-  const lines = (dm && dm===da) ? [`身上的醫療實支、意外實支${dm}`]
-    : [dm && `身上的醫療實支${dm}`, da && `身上的意外實支${da}`].filter(Boolean);
-  return `<div class="rcpt-warn">${lines.map(t=>`<div>📁 ${t}</div>`).join('')}</div>`;
+  const kinds = Object.keys(seen).filter(k=>seen[k].o.size||seen[k].c.size);
+  if(!kinds.length) return '';
+  return `<div class="rcpt-row">${kinds.map(k=>`<div class="rcpt-pill">📁 ${k}：正本${seen[k].o.size}，副本${seen[k].c.size}</div>`).join('')}</div>`;
 }
 
 function renderPolicyCard(p, riders, editable, compact, coverageCount){
