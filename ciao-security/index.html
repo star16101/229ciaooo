@@ -695,6 +695,10 @@
   .topbar-c .brand .title{font-size:21px!important;}
   .topbar-c .top-right .island-mascot{width:62px!important;margin:-8px 0 -8px 0!important;}
   .topbar-c .icon-btn{padding:revert!important;font-size:revert!important;}
+  .ann-chev{margin-left:auto;padding-left:10px;color:var(--ink-soft);font-size:14px;}
+  .chip.jump-cta{position:relative;overflow:hidden;background:var(--grad)!important;color:#fff!important;font-weight:700;box-shadow:6px 6px 14px rgba(214,150,40,.4),-5px -5px 12px #fff!important;}
+  .chip.jump-cta::after{content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:rotate(20deg);animation:ctaShine 4.2s ease-in-out infinite;}
+  @media (prefers-reduced-motion:reduce){.chip.jump-cta::after{animation:none}}
   .ann-wrap{margin:4px 0 18px;} .ann-badge{margin-left:8px;font-size:11px;font-weight:700;color:#fff;background:#E08A1E;border-radius:10px;padding:2px 8px;letter-spacing:0;}
   .ann-card{margin-bottom:10px;padding:14px 16px;} .ann-card.ann-new{border:1.5px solid #E9B44C;}
   .topbar-c .top-right .island-mascot{width:80px!important;margin:-14px 0 -14px 0!important;}
@@ -2939,12 +2943,12 @@ function annCardsHtml(){
   const unread = list.filter(a=>!reads.has(a.id)).length;
   const shown = state.annAll ? list : list.slice(0,3);
   return `<div class="ann-wrap">
-    <div class="section-title">📢 最新公告${unread?`<span class="ann-badge">${unread} 則未讀</span>`:''}</div>
-    ${shown.map(a=>{ const nw=!reads.has(a.id); return `<div class="card tap ann-card ${nw?'ann-new':''}" data-ann="${a.id}">
+    <div class="section-title ann-toggle" id="ann-toggle" style="cursor:pointer;">📢 ${unread?'您有最新公告':'最新公告'}${unread?`<span class="ann-badge">${unread} 則未讀</span>`:''}<span class="ann-chev">${state.annOpen?'︿':'﹀'}</span></div>
+    ${!state.annOpen ? '' : shown.map(a=>{ const nw=!reads.has(a.id); return `<div class="card tap ann-card ${nw?'ann-new':''}" data-ann="${a.id}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><div style="font-weight:700;font-size:14.5px;">${esc(a.title)}</div>${nw?'<span class="tag accent">NEW</span>':''}</div>
       <div class="hint" style="margin-top:6px;">${new Date(a.created_at).toLocaleDateString('zh-TW')}${(a.body||(a.images||[]).length||a.link_url)?'・點開看內容':''}</div>
     </div>`;}).join('')}
-    ${list.length>3?`<div class="hint" id="ann-more" style="text-align:center;cursor:pointer;padding:6px;">${state.annAll?'收合':'看全部公告('+list.length+')'}</div>`:''}
+    ${state.annOpen && list.length>3?`<div class="hint" id="ann-more" style="text-align:center;cursor:pointer;padding:6px;">${state.annAll?'收合':'看全部公告('+list.length+')'}</div>`:''}
   </div>`;
 }
 function bindAnnouncements(){
@@ -2959,6 +2963,7 @@ function bindAnnouncements(){
       render();
     }
   });
+  const tg=document.getElementById('ann-toggle'); if(tg) tg.onclick=()=>{ state.annOpen=!state.annOpen; render(); };
   const mo=document.getElementById('ann-more'); if(mo) mo.onclick=()=>{ state.annAll=!state.annAll; render(); };
 }
 
@@ -2983,7 +2988,7 @@ function renderClientHome(){
       <div class="section-title">保單列表</div>
       ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
       ${rcptWarnHtml()}
-      ${shownCoverage.length && shownPolicies.length>2 ? `<div class="chip-row" style="margin-bottom:12px;"><button class="chip" onclick="document.getElementById('cov-total').scrollIntoView({behavior:'smooth',block:'start'})">↓ 直接看保障總和</button></div>` : ''}
+      ${shownCoverage.length && shownPolicies.length>2 ? `<div class="chip-row" style="margin-bottom:12px;"><button class="chip jump-cta" onclick="document.getElementById('cov-total').scrollIntoView({behavior:'smooth',block:'start'})">↓ 直接看保障總和</button></div>` : ''}
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>${viewF?'請聯繫業務協助建檔':'如有疑問請聯繫您的業務'}</div>` :
         shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
       ${shownCoverage.length ? `
