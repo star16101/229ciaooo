@@ -236,6 +236,17 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--ink);display:inli
 .bkph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
 .bkph .small{grid-column:1/-1}
 .page ol li{margin-bottom:3px}
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.ftile{position:relative;flex-direction:column;gap:2px;padding:8px 2px 6px;min-height:68px;font-size:11.5px;border-color:var(--line);text-align:center;line-height:1.25}
+.ftile.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.ftile.off{color:var(--mute);background:var(--tint);border-color:transparent}
+.ficon svg{width:26px;height:26px;stroke:currentColor;display:block}
+.place .ic.ficon svg{width:22px;height:22px}
+.ftile .fn{position:absolute;top:3px;right:4px;font-size:10px;line-height:15px;min-width:15px;border-radius:8px;background:var(--t-yellow);color:var(--ink);padding:0 3px}
+.ftile .fn.low{background:var(--t-coral)}
+.ftile.on .fn{background:#fff}
+.fno{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:var(--t-yellow);font-size:11px;margin-right:5px;vertical-align:1px}
+.frow{cursor:pointer}
 .ended{text-align:center;padding:26px 16px}
 .edit{display:none!important}body.editing .edit{display:inline-flex!important}
 .editb{display:none!important}body.editing .editb{display:flex!important}
@@ -295,6 +306,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
  <div class="hrow">
   <span class="logo"><svg class="i"><use href="#i-plane"/></svg></span>
   <button class="tripbtn" id="tripBtn" aria-label="切換旅程"><span style="min-width:0;flex:1"><b id="tripTitle">旅行手帳</b><small>TRAVEL NOTEBOOK × 行旅野帳</small></span><svg class="i" style="width:16px;color:var(--mute)"><use href="#i-down"/></svg></button>
+  <button id="foodBtn" class="hbtn" style="display:none" aria-label="今天吃什麼（台灣美食）"><svg class="i"><use href="#i-bowl"/></svg></button>
   <button id="shelfBtn" class="hbtn" style="display:none" aria-label="回憶書櫃"><svg class="i"><use href="#i-book"/></svg></button>
   <button id="editToggle" class="sm" style="display:none"><svg class="i"><use href="#i-pen"/></svg><span>編輯</span></button>
  </div>
@@ -309,6 +321,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
  <section class="view" id="v-tool"></section>
  <section class="view" id="v-info"></section>
  <section class="view" id="v-sos"></section>
+ <section class="view" id="v-food"></section>
 </div>
 
 <div id="sheet" role="dialog" aria-modal="true"><div class="pane" id="pane"></div></div>
@@ -602,7 +615,7 @@ const mut=fn=>{const t=T();if(!t)return;fn(t);save(curId)};
 /* ================= tabs ================= */
 $("#tabs").innerHTML=TABS.map(([k,l,i])=>`<button data-v="${k}" class="${k==="sos"?"sos":""}">${ic(i)}<span>${l}</span></button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b){view=b.dataset.v;showView();window.scrollTo(0,0)}});
-function showView(){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+view));document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+function showView(){$("#foodBtn")?.classList.toggle("pri",view==="food");document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+view));document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
  if(view==="plan")setTimeout(drawMap,30);fitTitles()}
 const hashId=()=>{const h=location.hash.slice(1);return h.startsWith("t-")?h.slice(2):null};
 function setHash(id){try{history.replaceState(null,"",id?"#t-"+id:location.pathname)}catch(e){}}
@@ -616,7 +629,7 @@ addEventListener("resize",fitTitles);
 /* ================= render ================= */
 function render(){
  document.body.classList.toggle("editing",editing&&canEdit);
- const et=$("#editToggle");et.style.display=canEdit?"":"none";$("#shelfBtn").style.display=canEdit?"":"none";et.classList.toggle("pri",editing);et.querySelector("span").textContent=editing?"完成":"編輯";
+ const et=$("#editToggle");et.style.display=canEdit?"":"none";$("#shelfBtn").style.display=canEdit?"":"none";$("#foodBtn").style.display=canEdit?"":"none";$("#foodBtn").classList.toggle("pri",view==="food");et.classList.toggle("pri",editing);et.querySelector("span").textContent=editing?"完成":"編輯";
  const t=T();$("#tripTitle").textContent=t?t.name:"旅行手帳";
  if(!t){renderEmpty();showView();return}
  fill(t);
@@ -1068,10 +1081,73 @@ $("#tripBtn").addEventListener("click",async()=>{
  <div class="small" style="margin:2px 0 6px;font-size:11px">← 往左滑可以刪除${nb?`　・結束的旅程收在右上角書櫃（${nb} 本）`:""}</div>
  <div class="acts2"><button class="pri" data-act="newTrip">${ic("i-plus")}新增旅程</button>${nb?`<button data-act="shelf">${ic("i-book")}回憶書櫃</button>`:""}</div><div class="small" style="margin-top:8px">公司招待的行程表：拍照或 PDF 傳到和 Claude 的對話，說「幫我匯入旅行手帳」</div>${mot}<div class="acts2"><button data-act="lockOut">登出主揪</button><button data-close>關閉</button></div>`)});
 $("#shelfBtn").addEventListener("click",()=>ACT.shelf());
+$("#foodBtn").addEventListener("click",()=>openFood());
 $("#pane").addEventListener("change",e=>{if(e.target.id==="motionChk"){LS.set("motion",e.target.checked);document.body.classList.toggle("motion",e.target.checked)}});
 $("#pane").addEventListener("click",e=>{const x=e.target.closest("[data-deltrip]");if(x){if(!x.dataset.arm){x.dataset.arm=1;x.textContent="確定？";return}
  const id=x.dataset.deltrip;delete trips[id];rpc("trip_delete",{p_pass:pass,p_id:id}).then(()=>toast("已刪除")).catch(()=>toast("刪除失敗"));if(curId===id){curId=defaultTrip();setHash(curId)}x.closest(".sw").remove();return}
  const b=e.target.closest("[data-pick]");if(!b)return;curId=b.dataset.pick;dayIdx=null;setHash(curId);view="home";closeSheet();window.scrollTo(0,0)});
+
+/* ---------- 全台覓食手帳 (Taiwan food finder, owner tool) ---------- */
+const FS={city:"高雄市",district:"新興區",mode:"cat",key:null,sort:"rating",home:"home",ref:null};
+let FLM=null,FMK=[],backView="home";
+function loadFood(){return new Promise((ok,no)=>{if(window.FOOD)return ok();const s=document.createElement("script");s.src="food.js?v=1";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function openFood(){if(view!=="food")backView=view;view="food";showView();scrollTo(0,0);
+ if(!window.FOOD){$("#v-food").innerHTML=`<div class="card"><div class="small">載入美食清單中…</div></div>`;try{await loadFood()}catch(e){$("#v-food").innerHTML=`<div class="card"><div class="small">載入失敗，請檢查網路後再試</div></div>`;return}}
+ if(!FS.ref&&FS.home==="home")FS.ref=FOOD.HOME;renderFood()}
+const FMEMO=()=>LS.get("fmemo",{});
+const fsearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+const flabel=()=>FS.mode==="cat"?(FOOD.CATS.find(c=>c.key===FS.key)||{}).label:FS.mode==="occ"?(FOOD.OCCASIONS.find(o=>o.key===FS.key)||{}).label:(FOOD.FORMS.find(f=>f.key===FS.key)||{}).label;
+function fdist(it){return FS.ref&&it.lat!=null?hav([FS.ref.lat,FS.ref.lng],[it.lat,it.lng]):Infinity}
+function fmatches(){const F=FOOD,dd=F.DATA[FS.city]?.[FS.district];if(!dd||!FS.key)return[];let out=[];
+ if(FS.mode==="cat")out=(dd[FS.key]||[]).map(x=>({...x,catKey:FS.key}));
+ else if(FS.mode==="form"){const f=F.FORMS.find(f=>f.key===FS.key);f.cats.forEach(k=>(dd[k]||[]).forEach(x=>out.push({...x,catKey:k})))}
+ else Object.keys(dd).forEach(k=>dd[k].forEach(x=>{if(((x.occ||[]).includes(FS.key)||(F.CDO[k]||[]).includes(FS.key))&&!out.some(o=>o.pid===x.pid))out.push({...x,catKey:k})}));
+ const s=FS.sort;out.sort((a,b)=>s==="distance"?(fdist(a)-fdist(b))||(b.r-a.r):s==="count"?(b.c-a.c)||(b.r-a.r):(b.r-a.r)||(b.c-a.c));return out}
+function renderFood(){const F=FOOD,dd=F.DATA[FS.city]?.[FS.district],list=fmatches(),memos=FMEMO();
+ const tiles=FS.mode==="cat"?F.CATS.map(c=>({key:c.key,label:c.label,icon:c.key,term:c.label,n:dd?(dd[c.key]||[]).length:null}))
+  :FS.mode==="occ"?F.OCCASIONS.map(o=>({key:o.key,label:o.label,icon:o.key,term:o.term})):F.FORMS.map(f=>({key:f.key,label:f.label,icon:f.cats[0],term:f.term}));
+ const has=t=>FS.mode==="cat"?!!(dd&&dd[t.key]&&dd[t.key].length):!!dd;
+ $("#v-food").innerHTML=`<div class="pagehead" style="display:flex;align-items:flex-end;gap:8px"><div style="flex:1"><div class="small" style="letter-spacing:.2em">TAIWAN FOOD NOTES</div><h1>今天吃什麼？</h1></div><button class="sm" data-fback>${ic("i-arrow")}回旅程</button></div>
+ <div class="card"><div class="f2"><label class="f"><span>城市</span><select id="fd_city">${Object.keys(F.DISTRICTS).map(c=>`<option ${c===FS.city?"selected":""}>${c}</option>`).join("")}</select></label>
+  <label class="f"><span>區域（✎＝有整理好的店家）</span><select id="fd_dist">${(F.DISTRICTS[FS.city]||[]).map(d=>`<option value="${d}" ${d===FS.district?"selected":""}>${d}${F.DATA[FS.city]?.[d]?" ✎":""}</option>`).join("")}</select></label></div>
+  <label class="f" style="margin:0"><span>距離從哪裡算</span><select id="fd_home"><option value="home" ${FS.home==="home"?"selected":""}>住家（新興區中山一路）</option><option value="gps" ${FS.home==="gps"?"selected":""}>我現在的位置</option><option value="none" ${FS.home==="none"?"selected":""}>不算距離</option></select></label></div>
+ <div class="card"><div class="chips" style="margin:0 0 10px">${[["cat","依類別"],["occ","依場合"],["form","飯／麵／湯"]].map(([k,l])=>`<button class="mem ${FS.mode===k?"sel":""}" data-fmode="${k}">${l}</button>`).join("")}</div>
+  <div class="fgrid">${tiles.map(t=>has(t)?`<button class="ftile ${FS.key===t.key?"on":""}" data-fkey="${t.key}">${t.n?`<span class="fn ${t.n<5?"low":""}">${t.n}</span>`:""}<span class="ficon">${F.ICONS[t.icon]||""}</span><span>${esc(t.label)}</span></button>`
+   :`<a class="ftile off" href="${fsearch(`${FS.city}${FS.district} ${t.term}`)}" target="_blank" rel="noopener"><span class="ficon">${F.ICONS[t.icon]||""}</span><span>${esc(t.label)}</span></a>`).join("")}</div>
+  <div class="small" style="margin-top:8px">${dd?"灰色的類別還沒整理店家，點了會直接用 Google 地圖搜尋":"這一區還沒整理店家，點類別會直接開 Google 地圖搜尋"}</div></div>
+ ${FS.key&&list.length?`<div class="card" id="fres"><h2>${dot("i-bowl")}${esc(flabel()||"")}・${esc(FS.district)}<span class="r">${list.length} 間</span></h2>
+  <div class="chips" style="margin:0 0 8px">${[["rating","評分高"],["count","評論多"],["distance","離我近"]].map(([k,l])=>`<button class="mem ${FS.sort===k?"sel":""}" data-fsort="${k}" ${k==="distance"&&!FS.ref?"disabled":""}>${l}</button>`).join("")}</div>
+  <div class="map" id="fmap" style="height:200px;margin-bottom:6px"></div>
+  ${list.map((it,i)=>{const d=fdist(it),m=memos[it.pid],occ=[...new Set([...(it.occ||[]),...(F.CDO[it.catKey]||[])])].map(o=>F.OCCASIONS.find(x=>x.key===o)?.label).filter(Boolean);
+   return `<div class="place frow" data-fi="${i}"><div class="top"><div class="ic ficon" style="background:var(--t-coral)">${F.ICONS[it.catKey]||""}</div><div class="body"><b>${i<30&&it.lat!=null?`<span class="fno">${i+1}</span>`:""}${esc(it.n)}</b>
+   <div class="small"><span style="color:#b8862b">★ ${it.r.toFixed(1)}</span>（${it.c.toLocaleString()}）・${esc(it.addr||"")}${isFinite(d)?`・${d.toFixed(1)} km${d<=4?`・走路約 ${Math.max(1,Math.round(d*16))} 分`:""}`:""}</div>
+   ${occ.length?`<div class="chips" style="margin:4px 0 0">${occ.slice(0,5).map(o=>`<span class="chip" style="font-size:11px;background:var(--t-green)">${esc(o)}</span>`).join("")}</div>`:""}
+   ${m?`<div class="memo" style="margin-top:6px;font-size:13px">跟 <b>${esc(m.name||"（沒填名字）")}</b> 來過：${esc(m.note||"")}<br><span class="small">${esc(m.updated||"")}</span></div>`:""}</div></div>
+   <div class="btnrow"><a class="btn sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.n+" "+FS.city+FS.district)}&query_place_id=${it.pid}" target="_blank" rel="noopener">${ic("i-pin")}店家</a><a class="btn sm" href="${fsearch((it.addr||"")+" "+FS.city+FS.district+" 停車場")}" target="_blank" rel="noopener">${ic("i-park")}停車</a><button class="sm" data-fmemo="${i}">${ic("i-pen")}${m?"改備忘":"備忘"}</button>${T()?`<button class="sm" data-fadd="${i}" aria-label="加到口袋名單">${ic("i-plus")}口袋</button>`:""}</div></div>`}).join("")}
+  <div class="small" style="margin-top:6px">Google 評分僅供參考，營業時間以店家公告為準；距離是直線估算；備忘只存在這支手機</div></div>`:""}
+ <div class="acts2"><button data-fpark>${ic("i-park")}找我附近的停車場</button></div>`;
+ fbind(list);if(FS.key&&list.length)setTimeout(()=>drawFoodMap(list),30)}
+function drawFoodMap(list){const el=$("#fmap");if(!el||typeof L==="undefined")return;if(FLM){FLM.remove();FLM=null}
+ FLM=L.map(el,{scrollWheelZoom:false});L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:18,attribution:"Tiles © Esri"}).addTo(FLM);
+ const pts=[];FMK=[];list.slice(0,30).forEach((it,i)=>{if(it.lat==null)return;pts.push([it.lat,it.lng]);FMK[i]=L.marker([it.lat,it.lng],{icon:L.divIcon({className:"",html:`<div class="pin" style="background:${i<3?"#F2A497":"#F6D27A"}">${i+1}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).addTo(FLM).bindPopup(`<b>${i+1}. ${esc(it.n)}</b><br>★ ${it.r.toFixed(1)}・${esc(it.addr||"")}`)});
+ if(FS.ref)L.circleMarker([FS.ref.lat,FS.ref.lng],{radius:7,color:"#3E3A39",weight:2,fillColor:"#A8D3E6",fillOpacity:1}).addTo(FLM).bindPopup(FS.home==="gps"?"你的位置":"住家");
+ if(pts.length)FLM.fitBounds(pts,{padding:[24,24],maxZoom:16});else FLM.setView([23.7,121],7);setTimeout(()=>FLM&&FLM.invalidateSize(),60)}
+function fbind(list){const v=$("#v-food");
+ $("#fd_city").onchange=e=>{FS.city=e.target.value;FS.district=FOOD.DISTRICTS[FS.city][0];FS.key=null;renderFood()};
+ $("#fd_dist").onchange=e=>{FS.district=e.target.value;FS.key=null;renderFood()};
+ $("#fd_home").onchange=e=>{FS.home=e.target.value;if(FS.home==="none"){FS.ref=null;if(FS.sort==="distance")FS.sort="rating";renderFood()}else if(FS.home==="home"){FS.ref=FOOD.HOME;renderFood()}
+  else{toast("定位中…");navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{FS.ref={lat:p.coords.latitude,lng:p.coords.longitude};FS.sort="distance";renderFood()},()=>{toast("定位失敗，改用住家");FS.home="home";FS.ref=FOOD.HOME;renderFood()},{timeout:8000}):toast("這個瀏覽器不能定位")}};
+ v.querySelectorAll("[data-fmode]").forEach(b=>b.onclick=()=>{FS.mode=b.dataset.fmode;FS.key=null;renderFood()});
+ v.querySelectorAll("[data-fkey]").forEach(b=>b.onclick=()=>{FS.key=b.dataset.fkey;renderFood();setTimeout(()=>$("#fres")?.scrollIntoView({behavior:"smooth",block:"start"}),60)});
+ v.querySelectorAll("[data-fsort]").forEach(b=>b.onclick=()=>{FS.sort=b.dataset.fsort;renderFood();$("#fres")?.scrollIntoView({block:"start"})});
+ v.querySelector("[data-fback]").onclick=()=>{view=backView==="food"?"home":backView;showView();scrollTo(0,0)};
+ v.querySelector("[data-fpark]").onclick=()=>{const go=u=>window.open(u,"_blank");navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>go(`https://www.google.com/maps/search/停車場/@${p.coords.latitude},${p.coords.longitude},17z`),()=>go(fsearch(`${FS.city}${FS.district} 停車場`)),{timeout:6000}):go(fsearch("停車場"))};
+ v.querySelectorAll(".frow").forEach(r=>r.onclick=e=>{if(e.target.closest("a,button"))return;const m=FMK[+r.dataset.fi];if(m&&FLM){FLM.setView(m.getLatLng(),16);m.openPopup();$("#fmap").scrollIntoView({behavior:"smooth",block:"center"})}});
+ v.querySelectorAll("[data-fmemo]").forEach(b=>b.onclick=()=>{const it=list[+b.dataset.fmemo],all=FMEMO(),m=all[it.pid]||{};
+  form(`${esc(it.n)}`,[{k:"name",label:"跟哪位客戶／朋友吃的？",ph:"例如：王小姐"},{k:"note",label:"備註",type:"textarea",ph:"例如：她喜歡這家的熱炒，下次再約"}],m,o=>{const a=FMEMO();if(!o.name&&!o.note)delete a[it.pid];else a[it.pid]={...o,updated:new Date().toLocaleDateString("zh-TW")};LS.set("fmemo",a);setTimeout(renderFood,0)},m.name||m.note?()=>{const a=FMEMO();delete a[it.pid];LS.set("fmemo",a);setTimeout(renderFood,0)}:null,`<div class="note2">只存在這支手機，不會同步給旅伴</div>`)});
+ v.querySelectorAll("[data-fadd]").forEach(b=>b.onclick=()=>{const it=list[+b.dataset.fadd],cl=(FOOD.CATS.find(c=>c.key===it.catKey)||{}).label||"";
+  mut(t=>{if(t.spots.some(s=>s.name===it.n))return;t.spots.push({id:uid(),kind:it.catKey==="cafe"||it.catKey==="drink"?"meal":"meal",name:it.n,type:cl,note:`★${it.r.toFixed(1)}（${it.c.toLocaleString()}）・${it.addr||""}`,q:`${it.n} ${FS.city}${FS.district}`,from:"覓食手帳"})});toast(`已加到「${T().name}」口袋名單`)});
+}
 
 /* ---------- proof photos (票據・訂位證明) ---------- */
 const proof={it:null};
