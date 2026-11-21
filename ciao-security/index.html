@@ -1579,7 +1579,7 @@ function renderPhaseTable(policies, coverage){
   const insOf = {}; policies.forEach(p=>{ insOf[p.id] = p.insurer || '其他'; });
   const insurers = [...new Set(policies.map(p=>p.insurer||'其他'))];
   const colOf = c => insOf[c.policy_id] || '其他';
-  const cols = insurers.filter(n=>coverage.some(c=>colOf(c)===n));
+  const cols = [...insurers, ...(insurers.includes('其他')?[]:['其他'])].filter(n=>coverage.some(c=>colOf(c)===n));
   const build = rows=>{
     const prepared = rows.map(c=>({ category: covCleanLabel(c.category), content: String(c.content||'').trim(), _orig:c.category, phase:'', subgroup:'' }));
     const merged = mergeSameCategory(prepared).map(m=>({...m, content: covFormatWan(m.content)}));
@@ -1601,7 +1601,7 @@ function renderPhaseTable(policies, coverage){
       + rows.map(l=>`<tr class="${ph.cls}"><th>${esc(l)}</th>${cols.map(c=>`<td>${cell(per[c][l])}</td>`).join('')}<td class="pt-tot">${cell(total[l])}</td></tr>`).join('');
   }).join('');
   return `<div class="pt-legend">${PHASES.map(ph=>`<div class="pt-lg ${ph.cls}"><b>${ph.k}</b><span>${esc(ph.title)}</span><small>${esc(ph.desc)}</small></div>`).join('')}</div>
-    <div class="pt-scroll"><table class="pt-tbl"><thead><tr><th>給付項目</th>${cols.map(c=>`<th>${esc(c.replace(/人壽$/,'').replace(/保險$/,''))}</th>`).join('')}<th class="pt-tot">合計</th></tr></thead><tbody>${body}</tbody></table></div>
+    <div class="pt-scroll"><table class="pt-tbl"><thead><tr><th>給付項目</th>${cols.map(c=>`<th>${esc(c==='其他'?'規劃表':c.replace(/人壽$/,'').replace(/保險$/,''))}</th>`).join('')}<th class="pt-tot">合計</th></tr></thead><tbody>${body}</tbody></table></div>
     <div class="hint" style="margin-top:12px;line-height:1.7;">依各家保險公司分欄，「最高」表示依實際醫療狀況、以此為上限給付。紅色字為收據類型（正本／副本）。</div>`;
 }
 
