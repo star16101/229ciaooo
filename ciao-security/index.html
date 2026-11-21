@@ -2998,7 +2998,6 @@ function renderClientHome(){
     body = `
       <div class="section-title">保單列表</div>
       ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
-      ${rcptWarnHtml()}
       ${shownCoverage.length && shownPolicies.length>2 ? `<div class="chip-row" style="margin-bottom:12px;"><button class="chip jump-cta" onclick="document.getElementById('cov-total').scrollIntoView({behavior:'smooth',block:'start'})">↓ 直接看保障總和</button></div>` : ''}
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>${viewF?'請聯繫業務協助建檔':'如有疑問請聯繫您的業務'}</div>` :
         shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
