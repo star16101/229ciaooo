@@ -150,11 +150,14 @@ button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible
 .flag{display:inline-block;font-size:11px;padding:0 7px;border-radius:6px;margin:0}
 .flag.f-warn{background:var(--t-yellow)}.flag.f-check{background:var(--t-green)}.flag.f-ok{background:var(--t-mizu)}
 .ev .chip{font-size:11px;padding:0 7px;border-radius:6px}
-.mv{text-decoration:none;color:inherit;margin:0 0 6px 2px;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden}
+.mv{margin:0 0 6px 2px}
+.mv1{display:flex;align-items:center;gap:6px;overflow:hidden}
+.mv2{display:block;margin:1px 0 0 4px;font-size:12.5px;color:var(--ink);text-decoration:none;line-height:1.4}
+.mv2:before{content:"⏱ ";font-size:11px}
 .mvbtn{display:inline-flex;align-items:center;gap:2px;background:none;border:0;padding:0;min-height:28px;flex:none}
 .mvbtn>svg{width:12px;height:12px;color:var(--mute)}
 .mv a.small{color:var(--mute);text-decoration:none}
-.mv .small{white-space:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+.mv .small{white-space:nowrap;line-height:1.35;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
 .mode{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:0 8px 0 6px;border-radius:99px;white-space:nowrap;flex:none}
 .mode svg{width:13px;height:13px}
 .btnrow{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;margin-top:6px}
@@ -441,7 +444,7 @@ const PHRASE={"日本":[["謝謝","ありがとうございます","a-ri-ga-tou 
 const CENTER={"濟州":[33.4996,126.5312],"東京":[35.6812,139.7671],"曼谷":[13.7563,100.5018],"首爾":[37.5665,126.978],"釜山":[35.1796,129.0756],"北京":[39.9042,116.4074],"台北":[25.033,121.5654],"宮古島":[24.8056,125.2811],
  "九份":[25.1092,121.8446],"石垣島":[24.3448,124.1572],"澎湖":[23.5711,119.5793],"綠島":[22.6617,121.49],"小琉球":[22.34,120.37],"北海道":[43.0618,141.3545],"大阪":[34.6937,135.5023],"福岡":[33.5904,130.4017],
  "重慶":[29.563,106.5516],"宜蘭":[24.757,121.753],"花蓮":[23.991,121.611],"台東":[22.7583,121.1444],"桃園":[24.9936,121.301],"山形":[38.2404,140.3633],"上海":[31.2304,121.4737],"高雄":[22.6273,120.3014],"沖繩":[26.2124,127.6809]};
-const RAD={"九份":.2,"台北":.5,"濟州":.45,"北海道":2,"沖繩":.8,"福岡":1.1,"大阪":.6,"東京":.6,"首爾":.6,"釜山":.25,"石垣島":.5,"宮古島":.3,"澎湖":.4,"花蓮":.7,"台東":.9,"宜蘭":.5,"桃園":.5,"山形":.8,"重慶":.8,"北京":1,"上海":.6,"曼谷":1,"高雄":.5,"綠島":.15,"小琉球":.1};
+const RAD={"九份":.45,"台北":.5,"濟州":.45,"北海道":2,"沖繩":.8,"福岡":1.1,"大阪":.6,"東京":.6,"首爾":.6,"釜山":.25,"石垣島":.5,"宮古島":.3,"澎湖":.4,"花蓮":.7,"台東":.9,"宜蘭":.5,"桃園":.5,"山形":.8,"重慶":.8,"北京":1,"上海":.6,"曼谷":1,"高雄":.5,"綠島":.15,"小琉球":.1};
 const NEAR=[["麵店","noodles","i-bowl"],["餐廳","restaurants","i-bowl"],["咖啡廳","cafe","i-cup"],["甜點","dessert","i-cake"],["便利商店","convenience store","i-shop"],["藥妝店","drugstore","i-pill"],["哺乳室","nursing room","i-baby"],["廁所","public toilet","i-wc"],["停車場","parking","i-park"],["加油站","gas station","i-fuel"]];
 const TABS=[["home","首頁","i-home"],["plan","行程","i-route"],["eat","景點美食","i-bowl"],["list","清單","i-check"],["tool","工具","i-tool"],["info","資訊","i-info"],["sos","緊急","i-sos"]];
 const SPOT_T=['09:30','11:00','14:00','16:00','17:30','19:30'];
@@ -742,7 +745,8 @@ function legRow(t,a,b,di,j){const m=b.mode;if(!m&&!b.move&&!canEdit)return"";con
  const tm=LEGKIND(m)==="car"||LEGKIND(m)==="moto"?"driving":LEGKIND(m)==="foot"?"walking":LEGKIND(m)==="bike"?"bicycling":"transit";
  const href=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(gq(t,a))}&destination=${encodeURIComponent(gq(t,b))}&travelmode=${tm}`;
  const tag=m?modeTag(m,""):`<span class="mode" style="background:var(--tint);color:var(--mute)">＋ 交通方式</span>`;
- return `<div class="mv">${canEdit&&di!=null?`<button class="mvbtn" data-act="legMode" data-d="${di}" data-j="${j}" aria-label="選擇交通方式">${tag}${ic("i-down")}</button>`:tag}<a class="small" href="${href}" target="_blank" rel="noopener" ${has&&!LEG[key]?`data-leg="${esc(key)}"`:""}>${has?legText(m,LEG[key]):""}${b.move?`${has?"・":""}${esc(b.move)}`:""}${!has&&!b.move&&m?`${esc(a.name)} → ${esc(b.name)}`:""}</a></div>`}
+ const pend=m&&!has&&(needGeo(a)||needGeo(b)),line2=!m?"":has?legText(m,LEG[key]):pend?"定位中，稍後算出時間…":"有一站找不到位置，點這裡用 Google 地圖看時間";
+ return `<div class="mv"><div class="mv1">${canEdit&&di!=null?`<button class="mvbtn" data-act="legMode" data-d="${di}" data-j="${j}" aria-label="選擇交通方式">${tag}${ic("i-down")}</button>`:tag}<span class="small">${esc(a.name)} → ${esc(b.name)}</span></div>${m||b.move?`<a class="mv2" href="${href}" target="_blank" rel="noopener"><span ${has&&!LEG[key]?`data-leg="${esc(key)}"`:""}>${line2}</span>${b.move?`${line2?"・":""}${esc(b.move)}`:""}</a>`:""}</div>`}
 const hav=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dg=r(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 async function osrm(p,a,b){const r=await fetch(`https://routing.openstreetmap.de/routed-${p}/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=false`);const j=await r.json();const x=j.routes?.[0];return x?{min:Math.max(1,Math.round(x.duration/60)),km:+(x.distance/1000).toFixed(1)}:null}
 let legBusy=false;
@@ -828,25 +832,25 @@ function drawMap(){const t=T(),el=$("#map");if(!t||!el||view!=="plan"||typeof L=
  if(pts.length>1)L.polyline(pts,{color:"#3E3A39",weight:2.5,opacity:.55,dashArray:"3 6",lineCap:"round"}).addTo(LM);
  const c=centerOf(t);if(pts.length)LM.fitBounds(pts,{padding:[28,28],maxZoom:15});else if(c)LM.setView(c,11);else LM.setView([23.7,121],6);
  setTimeout(()=>LM&&LM.invalidateSize(),60);
- const miss=d.items.filter(needGeo).length,fail=d.items.filter(i=>i.geoFail&&i.geoV===2).length;
+ const miss=d.items.filter(needGeo).length,fail=d.items.filter(i=>i.geoFail&&i.geoV===3).length;
  $("#geoNote").textContent=miss?`定位中 ${miss} 個…`:fail?`${fail} 個找不到位置`:"";
  if(miss)geocodeDay(t,dayIdx);
 }
 /* ---------- geocoding (Nominatim, 1 req/sec) ---------- */
-let geoBusy=false;const GEO=LS.get("geo2",{});
-const needGeo=it=>!it.pinned&&it.geoV!==2;
+let geoBusy=false;const GEO=LS.get("geo3",{});
+const needGeo=it=>!it.pinned&&it.geoV!==3;
 function radOf(t){const s=(t.lib||"")+"|"+(t.dest||"");for(const k in RAD)if(s.includes(k))return RAD[k];return .5}
 function cands(it,t){const out=[];const add=s=>{s=(s||"").replace(/[📸🤿]/gu,"").trim();if(s&&!out.includes(s))out.push(s)};add(it.q);
- const par=(it.name.match(/[（(]([^）)]+)[）)]/)||[])[1];if(par&&!/^\d|停留|約/.test(par))add(par);add(it.name.replace(/[（(][^）)]*[）)]/g,"").replace(/[・|｜].*$/,""));add(it.name);return out.slice(0,3)}
+ const par=(it.name.match(/[（(]([^）)]+)[）)]/)||[])[1];if(par&&!/^\d|停留|約/.test(par))add(par);const base=it.name.replace(/[（(][^）)]*[）)]/g,"").replace(/[・|｜].*$/,"").replace(/[\u{1F300}-\u{1FAFF}]/gu,"").trim();add(base);add(it.name);const dk=(t.dest||"").replace(/^(日本|韓國|台灣|泰國|中國)/,"");if(dk&&!base.includes(dk))add(dk+" "+base);return out.slice(0,4)}
 async function nomi(q,c,rd=1.2){const vb=c?`&viewbox=${c[1]-rd},${c[0]+rd},${c[1]+rd},${c[0]-rd}&bounded=1`:"";
  const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=zh-TW&q=${encodeURIComponent(q)}${vb}`);const j=await r.json();return j[0]?[+j[0].lat,+j[0].lon]:null}
 async function geocodeCenter(t){if(t.center||t._cTried||!t.dest)return;t._cTried=1;try{const r=await nomi(t.dest,null);if(r){t.center=r;if(canEdit)save(curId,true);loadWeather(t)}}catch(e){}}
 async function geocodeDay(t,di){if(geoBusy)return;geoBusy=true;const c=centerOf(t),rd=radOf(t);let changed=false;
  const ok=p=>!c||(Math.abs(p[0]-c[0])<=rd*1.05&&Math.abs(p[1]-c[1])<=rd*1.05);
  try{for(const it of t.days[di].items){if(!needGeo(it))continue;delete it.lat;delete it.lng;delete it.geoFail;const ck=(t.lib||t.dest)+"|"+(it.q||it.name);
-   if(GEO[ck]&&ok(GEO[ck])){it.lat=GEO[ck][0];it.lng=GEO[ck][1];it.geoV=2;changed=true;continue}
+   if(GEO[ck]&&ok(GEO[ck])){it.lat=GEO[ck][0];it.lng=GEO[ck][1];it.geoV=3;changed=true;continue}
    let hit=null;for(const q of cands(it,t)){try{hit=await nomi(q,c,rd)}catch(e){}await sleep(1100);if(hit&&!ok(hit))hit=null;if(hit)break}
-   if(hit){it.lat=hit[0];it.lng=hit[1];GEO[ck]=hit;LS.set("geo2",GEO)}else it.geoFail=1;it.geoV=2;changed=true;
+   if(hit){it.lat=hit[0];it.lng=hit[1];GEO[ck]=hit;LS.set("geo3",GEO)}else it.geoFail=1;it.geoV=3;changed=true;
    if(T()===t&&dayIdx===di)drawMapLite()}}
  finally{geoBusy=false}
  if(changed&&canEdit&&trips[curId]===t)save(curId,true);if(T()===t&&dayIdx===di)drawMapLite()}
