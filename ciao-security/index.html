@@ -705,6 +705,9 @@
   .prem-total b{font-weight:700;}
   .tag.deduct-tag{background:rgba(95,123,138,.16)!important;color:#475F6D!important;font-weight:700;border:1px solid rgba(95,123,138,.3);}
   .tag.holder-tag{background:rgba(95,123,138,.14)!important;color:#475F6D!important;font-weight:700;}
+  .tag.age-tag{font-weight:700;border:1px solid transparent;}
+  .tag.age-tag.over{background:rgba(182,106,106,.16)!important;color:#B66A6A!important;border-color:rgba(182,106,106,.35);}
+  .tag.age-tag.soon{background:rgba(240,185,70,.22)!important;color:#B8801A!important;border-color:rgba(240,185,70,.4);}
   .tag.expired-tag{background:rgba(120,128,140,.18)!important;color:#5E6672!important;font-weight:700;border:1px solid rgba(120,128,140,.3);}
   .rcpt-row{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 14px;}
   .rcpt-pill{flex:1 1 0;min-width:0;text-align:center;border-radius:999px;padding:9px 6px;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm);white-space:nowrap;}
@@ -2595,6 +2598,14 @@ function polExpired(p){
   d.setFullYear(d.getFullYear()+parseInt(m[1],10));
   return d < new Date();
 }
+function ageTermState(term){
+  const m=String(term||'').trim().match(/^(\d+)\s*歲$/); if(!m) return null;
+  const n=+m[1], age=ageFromBirthday(gapSubject()); if(age==null) return null;
+  if(age>=n) return {cls:'over',text:`${n}歲已到期・建議重新規劃`};
+  if(n-age<=5) return {cls:'soon',text:`${n}歲到期・剩${n-age}年，建議規劃新保障`};
+  return null;
+}
+function ageTermTag(term){ const t=ageTermState(term); return t?`<span class="tag age-tag ${t.cls}">${esc(t.text)}</span>`:''; }
 function polPremium(p, riders){ if(polExpired(p)) return 0; return (Number(p.premium)||0) + (riders||[]).reduce((a,r)=>a+(Number(r.premium)||0),0); }
 function premTotalHtml(){
   const t = (state.policies||[]).reduce((a,p)=>a+polPremium(p,state.ridersByPolicy[p.id]||[]),0);
@@ -2627,6 +2638,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
       </div>
       <div class="tag-row">
         ${polExpired(p) ? '<span class="tag expired-tag">繳費期滿</span>' : ''}
+        ${ageTermTag(p.payment_term)}
         ${rcptTags}
         ${statusWarn ? `<span class="tag" style="background:var(--danger-soft);color:var(--danger);">${esc(p.status)}</span>` : ''}
         ${p.policyholder ? `<span class="tag holder-tag">要保人 ${esc(p.policyholder)}</span>` : ''}
@@ -2638,6 +2650,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
       ${(!compact && riders.length) ? `<div class="rider-box"><div class="rider-cap">附約</div>${riders.map(r=>`
         <div class="rider-row">
           <div class="rider-name">${esc(r.product_name)}</div>
+          ${ageTermTag(r.payment_term) ? `<div class="rider-tags">${ageTermTag(r.payment_term)}</div>` : ''}
           ${(r.payment_term || r.coverage_plan || r.premium) ? `<div class="rider-tags">${esc([r.payment_term, r.coverage_plan, (r.premium&&!polExpired(p))?fmtMoney(r.premium)+'元':''].filter(Boolean).join(' · '))}</div>` : ''}
         </div>
       `).join('')}</div>` : ''}
