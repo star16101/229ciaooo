@@ -62,7 +62,7 @@ h2 .r{margin-left:auto;font-size:12px;color:var(--mute);font-weight:400}
 .float b{display:block;font-size:12px}
 .float .fi{width:22px;height:22px;border-radius:7px;background:var(--t-yellow);display:grid;place-items:center;flex:none}
 .float .fi svg{width:13px;height:13px}
-.f1{left:8px;bottom:8px}.f2{right:8px;bottom:8px}
+.float.fa{left:8px;bottom:8px}.float.fb{right:8px;bottom:8px}.float{max-width:calc(50% - 14px)}.float>span:last-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hero .in{padding:10px 14px 12px}
 .tagline{font-size:13px;color:var(--mute);margin:2px 0 0}
 .cd{display:flex;align-items:stretch;gap:8px;margin:10px 0 4px}
@@ -661,11 +661,11 @@ setInterval(tick,1000);
 const datesLine=t=>{const n=t.days.length;return `${t.start.replace(/-/g,".")}（${wk(t.start)}）– ${md(t.end)}（${wk(t.end)}）・${n} 天 ${n-1} 夜`};
 const flagSVGsafe=()=>typeof flagSVG!=="undefined"?flagSVG:"";
 function heroCard(t,inner){const s=statusOf(t),{f}=departAt(t),dd=diffDays(todayTW(),t.start),di=diffDays(t.start,todayTW());
- const f1=s==="before"?`<div class="float f1"><span class="fi">${ic("i-clock")}</span><span><b>還有 ${dd} 天出發</b>${f.dep?`${md(f.date||t.start)} ${f.dep} 起飛`:md(t.start)}</span></div>`
-  :s==="during"?`<div class="float f1"><span class="fi">${ic("i-route")}</span><span><b>旅程第 ${di+1} 天</b>${esc(t.days[di]?.title||"玩得開心")}</span></div>`
-  :`<div class="float f1"><span class="fi">${ic("i-heart")}</span><span><b>旅遊回憶書</b>回來 ${diffDays(t.end,todayTW())} 天了</span></div>`;
+ const f1=s==="before"?`<div class="float fa"><span class="fi">${ic("i-clock")}</span><span><b>還有 ${dd} 天出發</b>${f.dep?`${md(f.date||t.start)} ${f.dep} 起飛`:md(t.start)}</span></div>`
+  :s==="during"?`<div class="float fa"><span class="fi">${ic("i-route")}</span><span><b>旅程第 ${di+1} 天</b>${esc(t.days[di]?.title||"玩得開心")}</span></div>`
+  :`<div class="float fa"><span class="fi">${ic("i-heart")}</span><span><b>旅遊回憶書</b>回來 ${diffDays(t.end,todayTW())} 天了</span></div>`;
  const musts=t.days.reduce((n,d)=>n+d.items.filter(i=>i.must).length,0),total=t.days.reduce((n,d)=>n+d.items.length,0);
- return `<div class="card hero"><div class="sc">${scene(t.theme)}${f1}<div class="float f2"><span class="fi">${ic("i-star")}</span><span><b>${musts?`必去 ${musts} 個`:`${total} 個地點`}</b>${esc(t.dest||"")}</span></div></div><div class="in">${inner}</div></div>`}
+ return `<div class="card hero"><div class="sc">${scene(t.theme)}${f1}<div class="float fb"><span class="fi">${ic("i-star")}</span><span><b>${musts?`必去 ${musts} 個`:`${total} 個地點`}</b>${esc(t.dest||"")}</span></div></div><div class="in">${inner}</div></div>`}
 function destBadge(t){return `<span class="badge">${t.country==="台灣"?flagSVGsafe():ic("i-pin")}${esc(t.dest||t.country||"目的地")}</span>`}
 
 /* ---------- home ---------- */
