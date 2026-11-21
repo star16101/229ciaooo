@@ -1541,7 +1541,7 @@ function covFormatWan(content){
   if(p && p.unit==='元' && p.n>=10000) return `${Math.round(p.n/100)/100}萬`;
   return content;
 }
-const COV_ORDER=[/重大傷病/,/重大疾病/,/癌症罹患|輕度癌症|重度癌症/,/燒燙傷/,/^疾病身故/,/^意外身故/,/癌症身故/,/失能金/,/扶助/,/醫療限額|骨折/,/病房費|日額|補貼/,/特定手術/,/手術/,/雜費/,/癌症/];
+const COV_ORDER=[/重大傷病/,/重大疾病/,/癌症罹患|輕度癌症|重度癌症/,/燒燙傷/,/^疾病身故/,/^意外身故/,/^特定事件身故/,/^特定失能/,/癌症身故/,/失能金/,/扶助/,/醫療限額|骨折/,/病房費|日額|補貼/,/特定手術/,/手術/,/雜費/,/癌症/];
 function covRank(label){ const i=COV_ORDER.findIndex(r=>r.test(label)); return i<0?99:i; }
 function renderCoverageTotal(list){
   if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增保障內容</div>`;
