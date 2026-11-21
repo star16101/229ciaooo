@@ -701,7 +701,8 @@
   .rcpt-hint{margin:-6px 0 14px;padding:9px 6px;border-radius:999px;font-size:11.5px;font-weight:700;color:#B8801A;background:linear-gradient(rgba(240,185,70,.22),rgba(240,185,70,.22)),var(--bg);box-shadow:var(--raise-sm);text-align:center;white-space:nowrap;}
   .tag.rcpt-tag.rc-acc{background:rgba(90,140,190,.16)!important;color:#4F7BA3!important;border:1px solid rgba(90,140,190,.32);}
   .tag.prem-tag{background:rgba(240,185,70,.2)!important;color:#9A6A10!important;font-weight:700;}
-  .prem-total{margin:0 0 12px;padding:9px 14px;border-radius:999px;font-size:12.5px;color:#9A6A10;background:var(--bg);box-shadow:var(--raise-sm);text-align:center;}
+  .prem-total{margin:14px 0 0;padding:9px 6px;border-radius:999px;font-size:11.5px;font-weight:700;color:#B8801A;background:linear-gradient(rgba(240,185,70,.22),rgba(240,185,70,.22)),var(--bg);box-shadow:var(--raise-sm);text-align:center;white-space:nowrap;}
+  .prem-total b{font-weight:700;}
   .rcpt-row{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 14px;}
   .rcpt-pill{flex:1 1 0;min-width:0;text-align:center;border-radius:999px;padding:9px 6px;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm);white-space:nowrap;}
   .ann-chev{margin-left:auto;padding-left:10px;color:var(--ink-soft);font-size:14px;}
@@ -2384,13 +2385,13 @@ function renderAdminClient(){
 
       <div class="section-title">保單列表</div>
       <div class="hint" style="margin-top:-6px;margin-bottom:14px;">點卡片進入該保單，可看附約與保障內容</div>
-      ${premTotalHtml()}
       ${rcptWarnHtml()}
       ${state.policies.length===0 ? `<div class="empty">${ILLUS_EMPTY}尚未新增保單</div>` :
         state.policies.map(p=>{
           const covCount = state.coverage.filter(c=>c.policy_id===p.id).length;
           return `<div data-view-policy="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], true, true, covCount).replace('class="card policy-card"','class="card policy-card tap"')}</div>`;
         }).join('')}
+      ${premTotalHtml()}
 
       ${state.coverage.length ? `
         ${(()=>{ const g=computeGaps(state.coverage,state.policies,state.ridersByPolicy);
@@ -3009,11 +3010,11 @@ function renderClientHome(){
   if(tab==='policies'){
     body = `
       <div class="section-title">保單列表</div>
-      ${premTotalHtml()}
       ${insurers.length>1 ? `<div class="chip-row"><button class="chip ${!flt?'active':''}" data-ins="">全部</button>${insurers.map(n=>`<button class="chip ${flt===n?'active':''}" data-ins="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : ''}
       ${shownCoverage.length && shownPolicies.length>2 ? `<div class="chip-row" style="margin-bottom:12px;"><button class="chip jump-cta" onclick="document.getElementById('cov-total').scrollIntoView({behavior:'smooth',block:'start'})">↓ 直接看保障總和</button></div>` : ''}
       ${state.policies.length===0 ? `<div class="empty">尚未有保單資料<br>${viewF?'請聯繫業務協助建檔':'如有疑問請聯繫您的業務'}</div>` :
         shownPolicies.map(p=>`<div data-detail="${p.id}">${renderPolicyCard(p, state.ridersByPolicy[p.id]||[], false, true).replace('class="card policy-card"','class="card policy-card tap"')}</div>`).join('')}
+      ${premTotalHtml()}
       ${shownCoverage.length ? `
         <div class="section-title" id="cov-total" style="margin-top:30px;scroll-margin-top:170px;">保障總和${flt?`・${esc(flt)}`:''}</div>
         ${renderCoverageTotal(shownCoverage)}` : ''}`;
