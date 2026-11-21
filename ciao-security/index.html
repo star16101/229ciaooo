@@ -2818,7 +2818,7 @@ function bindParsedMultiBatchEvents(){
 // ---------- policy form modal ----------
 function openPolicyForm(policy){
   state.draftRiders = policy && state.ridersByPolicy[policy.id]
-    ? state.ridersByPolicy[policy.id].map(r=>({product_name:r.product_name, payment_term:r.payment_term||'', coverage_plan:r.coverage_plan||'', premium:r.premium||''}))
+    ? state.ridersByPolicy[policy.id].map(r=>({product_name:r.product_name, payment_term:r.payment_term||'', coverage_plan:r.coverage_plan||'', premium:r.premium||'', orig:r.product_name}))
     : [];
   renderModal(`
     <div class="modal-title">${policy? '編輯保單':'新增保單'}</div>
@@ -2872,6 +2872,16 @@ function openPolicyForm(policy){
       policyId = inserted?.id;
     }
     const validRiders = state.draftRiders.filter(r=>r.product_name.trim());
+    if(policyId && policy){
+      // 同步保障內容的「來源」名稱：附約改名 → 跟著改；附約被刪除 → 該附約的保障一併刪除
+      const oldNames = [policy.product_name, ...(state.ridersByPolicy[policy.id]||[]).map(r=>r.product_name)];
+      const renames = new Map();
+      if(policy.product_name !== name) renames.set(policy.product_name, name);
+      validRiders.forEach(r=>{ const nn=r.product_name.trim(); if(r.orig && r.orig!==nn) renames.set(r.orig, nn); });
+      const keep = new Set([name, ...validRiders.map(r=>r.orig||r.product_name.trim())]);
+      for(const [o,n] of renames){ await sb.from('ins_coverage_summary').update({source:n}).eq('policy_id', policyId).eq('source', o); }
+      for(const o of oldNames){ if(!keep.has(o)) await sb.from('ins_coverage_summary').delete().eq('policy_id', policyId).eq('source', o); }
+    }
     if(policyId && validRiders.length){
       await sb.from('ins_policy_riders').insert(validRiders.map((r,i)=>({
         policy_id: policyId, product_name: r.product_name.trim(),
