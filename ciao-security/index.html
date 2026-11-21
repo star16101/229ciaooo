@@ -704,6 +704,7 @@
   .prem-total{margin:14px 0 0;padding:9px 6px;border-radius:999px;font-size:11.5px;font-weight:700;color:#B8801A;background:linear-gradient(rgba(240,185,70,.22),rgba(240,185,70,.22)),var(--bg);box-shadow:var(--raise-sm);text-align:center;white-space:nowrap;}
   .prem-total b{font-weight:700;}
   .tag.deduct-tag{background:rgba(95,123,138,.16)!important;color:#475F6D!important;font-weight:700;border:1px solid rgba(95,123,138,.3);}
+  .tag.holder-tag{background:rgba(95,123,138,.14)!important;color:#475F6D!important;font-weight:700;}
   .rcpt-row{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 14px;}
   .rcpt-pill{flex:1 1 0;min-width:0;text-align:center;border-radius:999px;padding:9px 6px;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm);white-space:nowrap;}
   .ann-chev{margin-left:auto;padding-left:10px;color:var(--ink-soft);font-size:14px;}
@@ -2619,6 +2620,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
       <div class="tag-row">
         ${rcptTags}
         ${statusWarn ? `<span class="tag" style="background:var(--danger-soft);color:var(--danger);">${esc(p.status)}</span>` : ''}
+        ${p.policyholder ? `<span class="tag holder-tag">要保人 ${esc(p.policyholder)}</span>` : ''}
         ${p.effective_date ? `<span class="tag">投保日 ${esc(p.effective_date)}</span>` : ''}
         ${p.payment_term ? `<span class="tag">${esc(/^\d+$/.test(String(p.payment_term).trim()) ? p.payment_term.trim()+'年期' : p.payment_term)}</span>` : ''}
         ${p.coverage_plan ? `<span class="tag accent">${esc(p.coverage_plan)}</span>` : ''}
@@ -2831,6 +2833,7 @@ function openPolicyForm(policy){
     <div class="hint" style="margin:2px 0 10px;">★ 主約</div>
     <div class="field"><label>商品名稱</label><input id="pf-name" required value="${esc(policy?.product_name||'')}"></div>
     <div class="field"><label for="pf-date">投保日</label><label style="display:block;" for="pf-date"><input id="pf-date" type="date" value="${esc(policy?.effective_date||'')}"></label></div>
+    <div class="field"><label>要保人（本人投保可留空）</label><input id="pf-holder" value="${esc(policy?.policyholder||'')}"></div>
     <div class="field"><label>保單狀況</label>
       <select id="pf-status">
         ${POLICY_STATUS_OPTIONS.map(s=>`<option value="${s}" ${(policy?.status||'有效')===s?'selected':''}>${s}</option>`).join('')}
@@ -2861,6 +2864,7 @@ function openPolicyForm(policy){
       status: document.getElementById('pf-status').value,
       payment_term: document.getElementById('pf-term').value.trim(),
       coverage_plan: document.getElementById('pf-plan').value.trim(),
+      policyholder: document.getElementById('pf-holder').value.trim() || null,
       premium: parseInt(String(document.getElementById('pf-prem').value).replace(/[^\d]/g,''),10) || null,
     };
     let policyId = policy?.id;
