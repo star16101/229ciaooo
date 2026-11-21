@@ -980,7 +980,7 @@ function genPassword(){ return Math.random().toString(36).slice(-6) + Math.rando
 const POLICY_STATUS_OPTIONS = ['有效','停效','失效','減額繳清','減額'];
 
 const KNOWN_INSURERS = ['台灣人壽','富邦人壽','新光人壽','凱基人壽','遠雄人壽','全球人壽','保誠人壽',
-  '國泰人壽','南山人壽','玉山人壽','安達人壽','臺銀人壽','安聯人壽','友邦人壽','宏泰人壽','元大人壽','第一金人壽','法國巴黎人壽'];
+  '國泰人壽','南山人壽','玉山人壽','安達人壽','臺銀人壽','三商美邦人壽','安聯人壽','友邦人壽','宏泰人壽','元大人壽','第一金人壽','法國巴黎人壽'];
 
 function detectInsurerFromText(text){
   for(const name of KNOWN_INSURERS){ if(text.includes(name)) return name; }
