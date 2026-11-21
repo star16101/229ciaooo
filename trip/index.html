@@ -862,7 +862,7 @@ function renderTool(t){const c=t.cur,dom=c.code==="TWD",r=rateOf(t),name=id=>t.m
   ${canEdit?`<form class="addrow" data-add="members"><input placeholder="加旅伴，多位用、分開：小美、阿明" aria-label="新增旅伴"><button class="pri" type="submit" aria-label="新增">${ic("i-plus")}</button></form>`:""}
   ${t.members.length?`<div style="margin-top:10px">${t.members.map(m=>{const v=bal[m.id]||0;return `<div class="bal"><span>${esc(m.name)}</span><span class="${v>=0?"p":"n"} num">${v>=0?"應收":"應付"} ${esc(c.sym)}${nf(Math.abs(v))}${dom?"":` <span class="small">≈NT$${nf(Math.abs(v)*r)}</span>`}</span></div>`}).join("")}</div>
   ${st.length?`<div class="memo">${st.map(([a,b,x])=>`${esc(name(a))} → ${esc(name(b))}　${esc(c.sym)}${nf(x)}${dom?"":`（≈NT$${nf(x*r)}）`}`).join("\n")}</div>`:""}`:""}
-  ${t.expenses.length?`<details style="margin-top:10px"><summary class="small" style="cursor:pointer">明細 ${t.expenses.length} 筆</summary>${t.expenses.slice().reverse().map(e=>{const f=(e.for&&e.for.length?e.for:t.members.map(m=>m.id));return sw(`<div class="row" style="background:#fff"><span>${esc(name(e.who))} 付${e.note?`・${esc(e.note)}`:""}<br><span class="small">${f.length} 人分：${f.map(name).map(esc).join("、")}</span></span><span class="num">${e.cur==="T"?"NT$":esc(c.sym)}${nf(e.amount)}<br><span class="small">每人 ${nf((+e.amount||0)/f.length,1)}</span></span></div>`,`data-del="expenses" data-id="${e.id}"`)}).join("")}</details>`:""}
+  ${t.expenses.length?`<details style="margin-top:10px" open><summary class="small" style="cursor:pointer">明細 ${t.expenses.length} 筆${canEdit?"・點一筆可以修改，往左滑刪除":""}</summary>${t.expenses.slice().reverse().map(e=>{const f=(e.for&&e.for.length?e.for:t.members.map(m=>m.id));return sw(`<div class="row" style="background:#fff;${canEdit?"cursor:pointer":""}" ${canEdit?`data-act="pay" data-e="${e.id}"`:""}><span>${esc(name(e.who))} 付${e.note?`・${esc(e.note)}`:""}<br><span class="small">${f.length} 人分：${f.map(name).map(esc).join("、")}</span></span><span class="num">${e.cur==="T"?"NT$":esc(c.sym)}${nf(e.amount)}<br><span class="small">每人 ${nf((+e.amount||0)/f.length,1)}</span></span></div>`,`data-del="expenses" data-id="${e.id}"`)}).join("")}</details>`:""}
  </div>
  <div class="card"><h2>${dot("i-users")}快速平分<span class="r">不記帳，算一下而已</span></h2><div style="display:flex;gap:8px;align-items:center">
   <input id="qs_amt" inputmode="decimal" placeholder="總金額" style="flex:1" aria-label="總金額"><span class="mute">÷</span><div class="stepper"><button type="button" data-qs="-1" aria-label="少一人">−</button><input id="qs_n" inputmode="numeric" value="${t.members.length||2}" aria-label="人數"><button type="button" data-qs="1" aria-label="多一人">＋</button></div><span class="mute">人</span></div>
@@ -1027,18 +1027,23 @@ const ACT={
    if(id&&t.expenses.some(ex=>ex.who===id||(ex.for||[]).includes(id))&&!x.dataset.arm){x.dataset.arm=1;x.style.background="#d9705c";x.style.color="#fff";toast("這位有帳目，再按一次才移除");return}r.remove()});
   $("#mf").addEventListener("submit",e=>{e.preventDefault();const rows=[...$("#mlist").querySelectorAll(".mrow")].map(r=>({id:r.dataset.mid||uid(),name:r.querySelector(".mn").value.trim(),phone:r.querySelector(".mp").value.trim()})).filter(m=>m.name);
    mut(t=>{const keep=new Set(rows.map(m=>m.id));t.members=rows;t.expenses=t.expenses.filter(ex=>keep.has(ex.who)).map(ex=>({...ex,for:(ex.for||[]).filter(id=>keep.has(id))}))});closeSheet();toast("已更新旅伴")})},
- pay(a){const t=T(),who=a.dataset.m,m=t.members.find(x=>x.id===who);
-  openSheet(`<h2 style="font-size:19px">${ic("i-wallet")}${esc(m.name)} 付了多少？</h2><form id="pf">
-  <div class="f2"><label class="f"><span>金額</span><input id="p_amt" inputmode="decimal" placeholder="0" required></label><label class="f"><span>幣別</span><select id="p_cur"><option value="L">${esc(t.cur.name)} ${esc(t.cur.sym)}</option>${t.cur.code==="TWD"?"":`<option value="T">台幣 NT$</option>`}</select></label></div>
-  <label class="f"><span>項目（選填）</span><input id="p_note" placeholder="晚餐、門票、計程車"></label>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="small" style="flex:1">分給誰（點名字取消）</span><button type="button" class="sm" id="p_all">全選</button></div><div class="chips">${t.members.map(x=>`<button type="button" class="mem sel" data-for="${x.id}">${esc(x.name)}</button>`).join("")}</div>
-  <div class="memo num" id="p_per" style="margin:6px 0 4px">÷ ${t.members.length} 人</div>
-  <div class="acts2"><button type="button" data-close>取消</button><button class="pri" type="submit">記一筆</button></div></form>`);
+ pay(a){const t=T(),ex=a.dataset.e?t.expenses.find(x=>x.id===a.dataset.e):null;if(a.dataset.e&&!ex)return;let who=ex?ex.who:a.dataset.m;const m=t.members.find(x=>x.id===who)||{name:"?"};
+  const fset=new Set(ex?(ex.for&&ex.for.length?ex.for:t.members.map(x=>x.id)):t.members.map(x=>x.id));
+  openSheet(`<h2 style="font-size:19px">${ic("i-wallet")}${ex?"編輯這筆":`${esc(m.name)} 付了多少？`}</h2><form id="pf">
+  ${ex?`<div class="small" style="margin-bottom:4px">誰付的</div><div class="chips" id="p_who">${t.members.map(x=>`<button type="button" class="mem ${x.id===who?"sel":""}" data-who="${x.id}">${esc(x.name)}</button>`).join("")}</div>`:""}
+  <div class="f2"><label class="f"><span>金額</span><input id="p_amt" inputmode="decimal" placeholder="0" required value="${ex?esc(ex.amount):""}"></label><label class="f"><span>幣別</span><select id="p_cur"><option value="L">${esc(t.cur.name)} ${esc(t.cur.sym)}</option>${t.cur.code==="TWD"?"":`<option value="T" ${ex?.cur==="T"?"selected":""}>台幣 NT$</option>`}</select></label></div>
+  <label class="f"><span>項目（選填）</span><input id="p_note" placeholder="晚餐、門票、計程車" value="${ex?esc(ex.note||""):""}"></label>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="small" style="flex:1">分給誰（點名字取消）</span><button type="button" class="sm" id="p_all">全選</button></div><div class="chips">${t.members.map(x=>`<button type="button" class="mem ${fset.has(x.id)?"sel":""}" data-for="${x.id}">${esc(x.name)}</button>`).join("")}</div>
+  <div class="memo num" id="p_per" style="margin:6px 0 4px">÷ ${fset.size} 人</div>
+  <div class="acts2">${ex?`<button type="button" id="p_del" style="color:#c4503b">刪除</button>`:""}<button type="button" data-close>取消</button><button class="pri" type="submit">${ex?"儲存":"記一筆"}</button></div></form>`);
+  if(ex){$("#p_who").addEventListener("click",e=>{const b=e.target.closest("[data-who]");if(!b)return;who=b.dataset.who;$("#p_who").querySelectorAll("[data-who]").forEach(x=>x.classList.toggle("sel",x===b))});
+   $("#p_del").addEventListener("click",e=>{if(!e.target.dataset.arm){e.target.dataset.arm=1;e.target.textContent="再按一次刪除";return}mut(t=>t.expenses=t.expenses.filter(x=>x.id!==ex.id));closeSheet();toast("已刪除")})}
   const per=()=>{const n=$("#pf").querySelectorAll("[data-for].sel").length,a=parseFloat($("#p_amt").value)||0,sym=$("#p_cur").value==="T"?"NT$":t.cur.sym;$("#p_per").textContent=n?`÷ ${n} 人${a?`　每人 ${sym}${nf(a/n,1)}`:""}`:"還沒選人"};
   $("#pf").querySelectorAll("[data-for]").forEach(b=>b.addEventListener("click",()=>{b.classList.toggle("sel");per()}));$("#p_amt").addEventListener("input",per);$("#p_cur").addEventListener("change",per);
   $("#p_all").addEventListener("click",()=>{const all=$("#pf").querySelectorAll("[data-for]"),on=[...all].every(b=>b.classList.contains("sel"));all.forEach(b=>b.classList.toggle("sel",!on));per()});
   $("#pf").addEventListener("submit",e=>{e.preventDefault();const amt=parseFloat($("#p_amt").value);const forIds=[...$("#pf").querySelectorAll("[data-for].sel")].map(b=>b.dataset.for);if(!amt||!forIds.length){toast("請填金額並選分給誰");return}
-   mut(t=>t.expenses.push({id:uid(),who,amount:amt,cur:$("#p_cur").value,note:$("#p_note").value.trim(),for:forIds,at:Date.now()}));closeSheet();toast("已記錄")})},
+   const o={who,amount:amt,cur:$("#p_cur").value,note:$("#p_note").value.trim(),for:forIds};
+   mut(t=>{if(ex){const x=t.expenses.find(x=>x.id===ex.id);if(x)Object.assign(x,o)}else t.expenses.push({id:uid(),...o,at:Date.now()})});closeSheet();toast(ex?"已更新":"已記錄")})},
 };
 const unlock={has:true};
 
