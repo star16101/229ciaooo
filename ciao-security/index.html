@@ -1292,6 +1292,11 @@ function computeGaps(coverage, policies, ridersByPolicy){
   const items = GAP_ITEMS.map(g=>{
     if(g.life){
       const have = gapWan(coverage, /^疾病身故/);
+      if(B.fromData && B.age<=16){
+        const need = 69, score = Math.min(100, Math.round(have/need*100));
+        return { ...g, have, need, score, covered: score>=90, status: score>=90?'ok':score>=50?'part':'gap',
+                 parts:[{ label:'身故保障（未成年上限）', have, target:need }], minor:true };
+      }
       if(!T.lifeBase) return { ...g, have, score:null, covered:true, status:'na', parts:[] };
       const need = lifeNeed(lifeAnswers());
       if(need==null) return { ...g, have, score:null, covered: have>0, status:'pending', parts:[] };
@@ -1336,6 +1341,15 @@ function gapBandHtml(B){
     <div class="chip-row" style="margin-bottom:14px;flex-wrap:wrap;overflow:visible;">${Object.entries(GAP_BANDS).map(([k,v])=>`<button class="chip ${B.key===k&&B.chosen?'active':''}" data-band="${k}">${v.label.split(' ')[0]}</button>`).join('')}</div>`;
 }
 function lifeCardHtml(g, T){
+  if(g.minor){
+    const gap = Math.round((g.need-g.have)*100)/100;
+    return `<div class="gap-detail card life-card" id="life-card"><div class="gd-title">👼🏻 身故保障</div>
+      <div class="gd-tip">未成年的身故保障有法定上限，建議補到 ${g.need} 萬。</div>
+      <div class="life-res"><div class="gd-part"><span>目前身故保障（疾病身故）</span><span>${gapFmt(g.have)}</span></div>
+      <div class="gd-part"><span>建議額度</span><span>${g.need} 萬</span></div>
+      <div class="gd-bar"><i style="width:${g.score}%"></i></div>
+      ${gap>0 ? `<div class="gd-tip" style="margin-top:10px;color:var(--ink);">身故保障還有 <b>${gapFmt(gap)}</b> 可以補足。</div>` : `<div class="gd-tip" style="margin-top:10px;color:var(--ink);">身故保障已經達到建議額度 🎉</div>`}</div></div>`;
+  }
   const a = lifeAnswers()||{};
   const chip=(k,v,label,on)=>`<button class="chip ${on?'active':''}" data-lq="${k}" data-v="${v}">${label}</button>`;
   const need = lifeNeed(a);
