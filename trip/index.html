@@ -864,7 +864,7 @@ function renderEat(t){const f=LS.get("eatf","all");const list=t.spots.filter(s=>
  ${t.lib?`<div class="small">從行旅野帳帶進來、還沒排進行程的備用景點和餐廳都在這裡${canEdit?"，按「排進行程」選一天就會加進去":""}</div>`:""}
  ${list.map(s=>{const i=t.spots.indexOf(s);return `<div class="place"><div class="top"><div class="ic">${ic(KINDS[s.kind]?.[1]||"i-pin")}</div><div class="body"><b>${s.must?`<span class="mustb">必去</span>`:""}${esc(s.name)}</b>
   <div class="small">${[s.type,s.price,s.tip].filter(Boolean).map(esc).join("・")}${s.from?`${s.type||s.price||s.tip?"・":""}來自：${esc(s.from)}`:""}</div>${s.note?`<div class="small" style="color:var(--ink)">${esc(s.note)}</div>`:""}</div></div>
-  <div class="btnrow">${proofBtn(t,s,`data-s="${i}"`)}${webBtn(s,1)}${mapBtns(t,s,"",1)}<button class="edit ib" data-act="editSpot" data-i="${i}" aria-label="編輯">${ic("i-pen")}</button><button class="edit sm pri" data-act="toDay" data-i="${i}">排進行程</button></div></div>`}).join("")||`<div class="small">還沒有口袋名單</div>`}</div>`}
+  <div class="btnrow">${proofBtn(t,s,`data-s="${i}"`)}${webBtn(s,1)}${mapBtns(t,s,"",1)}<button class="edit ib" data-act="editSpot" data-i="${i}" aria-label="編輯">${ic("i-pen")}</button>${canEdit?`<button class="sm pri" data-act="toDay" data-i="${i}">${ic("i-plus")}排進行程</button>`:""}</div></div>`}).join("")||`<div class="small">還沒有口袋名單</div>`}</div>`}
 
 /* ---------- lists ---------- */
 const sw=(inner,del,cls="",tag="div",extra="")=>canEdit?`<${tag} class="sw ${cls}" ${extra}><div class="swc">${inner}</div><button class="swx" ${del}>刪除</button></${tag}>`:`<${tag} class="${cls}" ${extra}>${inner}</${tag}>`;
