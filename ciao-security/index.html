@@ -705,6 +705,7 @@
   .prem-total b{font-weight:700;}
   .tag.deduct-tag{background:rgba(95,123,138,.16)!important;color:#475F6D!important;font-weight:700;border:1px solid rgba(95,123,138,.3);}
   .tag.holder-tag{background:rgba(95,123,138,.14)!important;color:#475F6D!important;font-weight:700;}
+  .tag.expired-tag{background:rgba(120,128,140,.18)!important;color:#5E6672!important;font-weight:700;border:1px solid rgba(120,128,140,.3);}
   .rcpt-row{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 14px;}
   .rcpt-pill{flex:1 1 0;min-width:0;text-align:center;border-radius:999px;padding:9px 6px;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm);white-space:nowrap;}
   .ann-chev{margin-left:auto;padding-left:10px;color:var(--ink-soft);font-size:14px;}
@@ -2587,7 +2588,14 @@ function rcptWarnHtml(){
 }
 
 const fmtMoney = n => Number(n).toLocaleString('en-US');
-function polPremium(p, riders){ return (Number(p.premium)||0) + (riders||[]).reduce((a,r)=>a+(Number(r.premium)||0),0); }
+function polExpired(p){
+  const m = String(p.payment_term||'').trim().match(/^(\d+)\s*年?期?$/);
+  if(!m || !p.effective_date) return false;
+  const d = new Date(p.effective_date); if(isNaN(d)) return false;
+  d.setFullYear(d.getFullYear()+parseInt(m[1],10));
+  return d < new Date();
+}
+function polPremium(p, riders){ if(polExpired(p)) return 0; return (Number(p.premium)||0) + (riders||[]).reduce((a,r)=>a+(Number(r.premium)||0),0); }
 function premTotalHtml(){
   const t = (state.policies||[]).reduce((a,p)=>a+polPremium(p,state.ridersByPolicy[p.id]||[]),0);
   return t>0 ? `<div class="prem-total">💰 年繳保費合計 <b>${fmtMoney(t)}</b> 元</div>` : '';
@@ -2618,6 +2626,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
         <div class="pol-right">${editable ? `<span class="pol-act" data-edit-policy="${p.id}">✎</span><span class="pol-act del" data-del-policy="${p.id}">✕</span>` : (compact ? '<span class="chev">›</span>' : '')}</div>
       </div>
       <div class="tag-row">
+        ${polExpired(p) ? '<span class="tag expired-tag">繳費期滿</span>' : ''}
         ${rcptTags}
         ${statusWarn ? `<span class="tag" style="background:var(--danger-soft);color:var(--danger);">${esc(p.status)}</span>` : ''}
         ${p.policyholder ? `<span class="tag holder-tag">要保人 ${esc(p.policyholder)}</span>` : ''}
@@ -2629,7 +2638,7 @@ function renderPolicyCard(p, riders, editable, compact, coverageCount){
       ${(!compact && riders.length) ? `<div class="rider-box"><div class="rider-cap">附約</div>${riders.map(r=>`
         <div class="rider-row">
           <div class="rider-name">${esc(r.product_name)}</div>
-          ${(r.payment_term || r.coverage_plan || r.premium) ? `<div class="rider-tags">${esc([r.payment_term, r.coverage_plan, r.premium?fmtMoney(r.premium)+'元':''].filter(Boolean).join(' · '))}</div>` : ''}
+          ${(r.payment_term || r.coverage_plan || r.premium) ? `<div class="rider-tags">${esc([r.payment_term, r.coverage_plan, (r.premium&&!polExpired(p))?fmtMoney(r.premium)+'元':''].filter(Boolean).join(' · '))}</div>` : ''}
         </div>
       `).join('')}</div>` : ''}
       ${(compact && riders.length) ? `<div class="hint" style="margin-top:10px;">附約 ${riders.length} 項</div>` : ''}
