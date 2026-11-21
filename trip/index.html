@@ -379,6 +379,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
  <symbol id="w-snow" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 6.5 4.3 4.3 0 0 0 7 15zM8 19h.01M12 20h.01M16 19h.01M10 22h.01M14 22h.01"/></symbol>
  <symbol id="w-storm" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 6.5 4.3 4.3 0 0 0 7 15zM12 15l-2 4h4l-2 4"/></symbol>
  <symbol id="w-fog" viewBox="0 0 24 24"><path d="M4 10h16M3 14h18M5 18h14M7 6h10"/></symbol>
+ <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17 7h.01"/></symbol>
  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zM4 20a2 2 0 0 0 2 2h13v-4M8 7h7"/></symbol>
  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
  <symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></symbol>
@@ -458,7 +459,9 @@ function toast(t,ms=2600){const el=$("#toast");el.textContent=t;el.style.display
 const gq=(t,it)=>it.lat!=null&&it.lng!=null?`${it.lat},${it.lng}`:(it.q||((t.dest?t.dest+" ":"")+it.name));
 const mapUrl=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
 const naverUrl=q=>"https://map.naver.com/p/search/"+encodeURIComponent(q);
-const mapBtns=(t,it,label="地圖",io)=>{const kr=t.country==="韓國",href=kr?naverUrl(it.q||it.name):mapUrl(gq(t,it)),nm=kr?"Naver 地圖":"Google 地圖";
+const normUrl=u=>{u=String(u||"").trim();if(!u)return"";if(/^@[\w.]+$/.test(u))return"https://instagram.com/"+u.slice(1);return/^https?:\/\//i.test(u)?u:"https://"+u};
+const webBtn=(it,io)=>{if(!it.web)return"";const u=normUrl(it.web),ig=/instagram\.com|instagr\.am/i.test(u);return io?`<a class="btn ib" href="${esc(u)}" target="_blank" rel="noopener" aria-label="${ig?"Instagram":"網站"}">${ic(ig?"i-ig":"i-link")}</a>`:`<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener">${ic(ig?"i-ig":"i-link")}${ig?"IG":"網站"}</a>`};
+const mapBtns=(t,it,label="地圖",io)=>{const kr=t.country==="韓國"&&!it.gmap,href=it.gmap?normUrl(it.gmap):kr?naverUrl(it.q||it.name):mapUrl(gq(t,it)),nm=kr?"Naver 地圖":"Google 地圖";
  return io?`<a class="btn ib ${kr?"naver":""}" href="${href}" target="_blank" rel="noopener" aria-label="${nm}">${ic(kr?"i-map":"i-pin")}</a>`:`<a class="btn sm ${kr?"naver":""}" href="${href}" target="_blank" rel="noopener">${ic(kr?"i-map":"i-pin")}${kr?"Naver":label}</a>`};
 
 /* ================= library glue ================= */
@@ -751,7 +754,7 @@ function timeline(t,di,compact){const d=t.days[di];if(!d.items.length)return `<d
  return `<div class="tl" data-tl="${di}">${d.items.map((it,j)=>{const col=KINDS[it.kind]?.[2]||"var(--k-spot)";
   return `${j>0?legRow(t,d.items[j-1],it):""}
   <div class="ev ${it.must?"must":""}" data-n="${j}" data-id="${it.id}"><div class="tm num"><b>${esc(it.time||"")}</b>${it.end?`<small>${esc(it.end)}</small>`:""}</div><div class="card" style="--kc:${col}">
-  <div class="hd"><b>${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</b>${proofBtn(t,it,`data-d="${di}" data-j="${j}"`)}${mapBtns(t,it,"",1)}<button class="edit ib" data-act="editItem" data-d="${di}" data-j="${j}" aria-label="編輯">${ic("i-pen")}</button></div>
+  <div class="hd"><b>${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</b>${proofBtn(t,it,`data-d="${di}" data-j="${j}"`)}${webBtn(it,1)}${mapBtns(t,it,"",1)}<button class="edit ib" data-act="editItem" data-d="${di}" data-j="${j}" aria-label="編輯">${ic("i-pen")}</button></div>
   <div class="meta">${it.flag?`<span class="flag ${FLAGS[it.flag]}">${it.flag}</span>`:""}${it.type?`<span class="chip">${esc(it.type)}</span>`:""}</div>
   ${!compact&&it.note?`<div class="nt">${esc(it.note)}</div>`:""}${!compact&&(it.tip||it.price)?`<div class="nt tp">${esc([it.tip,it.price].filter(Boolean).join("・"))}</div>`:""}
   </div></div>`}).join("")}</div>`}
@@ -848,7 +851,7 @@ function renderEat(t){const f=LS.get("eatf","all");const list=t.spots.filter(s=>
  ${t.lib?`<div class="small">從行旅野帳帶進來、還沒排進行程的備用景點和餐廳都在這裡${canEdit?"，按「排進行程」選一天就會加進去":""}</div>`:""}
  ${list.map(s=>{const i=t.spots.indexOf(s);return `<div class="place"><div class="top"><div class="ic">${ic(KINDS[s.kind]?.[1]||"i-pin")}</div><div class="body"><b>${s.must?`<span class="mustb">必去</span>`:""}${esc(s.name)}</b>
   <div class="small">${[s.type,s.price,s.tip].filter(Boolean).map(esc).join("・")}${s.from?`${s.type||s.price||s.tip?"・":""}來自：${esc(s.from)}`:""}</div>${s.note?`<div class="small" style="color:var(--ink)">${esc(s.note)}</div>`:""}</div></div>
-  <div class="btnrow">${proofBtn(t,s,`data-s="${i}"`)}${mapBtns(t,s,"",1)}<button class="edit ib" data-act="editSpot" data-i="${i}" aria-label="編輯">${ic("i-pen")}</button><button class="edit sm pri" data-act="toDay" data-i="${i}">排進行程</button></div></div>`}).join("")||`<div class="small">還沒有口袋名單</div>`}</div>`}
+  <div class="btnrow">${proofBtn(t,s,`data-s="${i}"`)}${webBtn(s,1)}${mapBtns(t,s,"",1)}<button class="edit ib" data-act="editSpot" data-i="${i}" aria-label="編輯">${ic("i-pen")}</button><button class="edit sm pri" data-act="toDay" data-i="${i}">排進行程</button></div></div>`}).join("")||`<div class="small">還沒有口袋名單</div>`}</div>`}
 
 /* ---------- lists ---------- */
 const sw=(inner,del,cls="",tag="div",extra="")=>canEdit?`<${tag} class="sw ${cls}" ${extra}><div class="swc">${inner}</div><button class="swx" ${del}>刪除</button></${tag}>`:`<${tag} class="${cls}" ${extra}>${inner}</${tag}>`;
@@ -1026,10 +1029,10 @@ const ACT={
    f,o=>mut(t=>{i>=0?Object.assign(t.flights[i],o):t.flights.push(o);t.flights.sort((a,b)=>((a.date||"")+(a.dep||"")).localeCompare((b.date||"")+(b.dep||"")))}),i>=0?()=>mut(t=>t.flights.splice(i,1)):null,`<label class="btn" style="width:100%;margin-bottom:4px">${ic("i-cam")}拍登機證自動帶入<input type="file" accept="image/*" id="bpIn" hidden></label><div class="note2" id="bpNote" style="margin:2px 0 10px">或只輸入班次號碼，會自動查出發地和抵達地</div>`);bindFlightForm()},
  editHotel(a){const i=+a.dataset.i,t=T();form(i>=0?"編輯住宿":"新增住宿",[{k:"name",label:"飯店名稱"},{k:"in",label:"入住日",type:"date",half:1},{k:"out",label:"退房日",type:"date",half:1},{k:"inout",label:"入住／退房時間",ph:"15:00 入住・11:00 退房"},{k:"rooms",label:"房間",ph:"2 間房"},{k:"phone",label:"電話",type:"tel"},{k:"addr",label:"地址或地圖搜尋字"},{k:"note",label:"備註",ph:"訂房代號、早餐時間"}],
   i>=0?t.hotels[i]:{in:t.start,out:t.end},o=>{if(!o.name)return false;mut(t=>{i>=0?Object.assign(t.hotels[i],o):t.hotels.push(o)})},i>=0?()=>mut(t=>t.hotels.splice(i,1)):null)},
- editSpot(a){const i=+a.dataset.i,t=T();form(i>=0?"編輯口袋名單":"新增口袋名單",[{k:"name",label:"名稱"},{k:"kind",label:"類型",type:"select",opts:[["spot","景點"],["meal","美食"],["other","其他"]],half:1},{k:"type",label:"分類",ph:"咖啡廳、晚餐",half:1},{k:"note",label:"說明"},{k:"price",label:"價位",half:1},{k:"tip",label:"停留／提醒",half:1},{k:"q",label:"地圖搜尋字（選填）"},{k:"must",label:"標成「必去」",type:"check"}],
+ editSpot(a){const i=+a.dataset.i,t=T();form(i>=0?"編輯口袋名單":"新增口袋名單",[{k:"name",label:"名稱"},{k:"kind",label:"類型",type:"select",opts:[["spot","景點"],["meal","美食"],["other","其他"]],half:1},{k:"type",label:"分類",ph:"咖啡廳、晚餐",half:1},{k:"note",label:"說明"},{k:"price",label:"價位",half:1},{k:"tip",label:"停留／提醒",half:1},{k:"gmap",label:"Google 地圖連結（選填）",ph:"在 Google 地圖按分享 → 複製連結"},{k:"web",label:"網站或 IG 連結（選填）",ph:"https://… 或 @帳號"},{k:"q",label:"地圖搜尋字（選填）"},{k:"must",label:"標成「必去」",type:"check"}],
   i>=0?t.spots[i]:{kind:"meal"},o=>{if(!o.name)return false;mut(t=>{i>=0?Object.assign(t.spots[i],o):t.spots.push({id:uid(),...o})})},i>=0?()=>mut(t=>t.spots.splice(i,1)):null)},
  toDay(a){const i=+a.dataset.i,t=T(),s=t.spots[i];form(`把「${esc(s.name)}」排進行程`,[{k:"d",label:"哪一天",type:"select",opts:t.days.map((d,k)=>[k,`Day ${k+1}・${md(addDays(t.start,k))} ${d.title||""}`])},{k:"time",label:"時間",type:"time"}],
-  {d:dayIdx,time:s.kind==="meal"?mealTime(s.type):"14:00"},o=>mut(t=>{const it={id:uid(),kind:s.kind==="meal"?"meal":"spot",time:o.time,end:"",name:s.name,note:s.note||"",tip:s.tip||"",type:s.type||"",price:s.price||"",stars:s.stars||0,mode:"",move:"",must:!!s.must,flag:"",q:s.q||""};
+  {d:dayIdx,time:s.kind==="meal"?mealTime(s.type):"14:00"},o=>mut(t=>{const it={id:uid(),kind:s.kind==="meal"?"meal":"spot",time:o.time,end:"",name:s.name,note:s.note||"",tip:s.tip||"",type:s.type||"",price:s.price||"",stars:s.stars||0,mode:"",move:"",must:!!s.must,flag:"",q:s.q||"",gmap:s.gmap||"",web:s.web||""};
    const items=t.days[+o.d].items;items.push(it);items.sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));t.spots.splice(i,1);toast(`已排進 Day ${+o.d+1}`)}))},
  editDay(){const t=T();form(`第 ${dayIdx+1} 天`,[{k:"title",label:"這天的標題",ph:"例如：西部海岸線"},{k:"area",label:"住宿區域",ph:"住宿：涯月／翰林"},{k:"drive",label:"移動方式與車程",ph:"濟州市 → 涯月，約 1 小時"},{k:"weather",label:"天氣（沒有預報時手動填）",ph:"晴 8° / 15°"}],t.days[dayIdx],o=>mut(t=>Object.assign(t.days[dayIdx],o)))},
  memo(a){const i=+a.dataset.d,t=T();form(`DAY ${i+1} 的筆記`,[{k:"memo",label:"寫下這天",type:"textarea",ph:"好吃的、好笑的、想再去的……"}],t.days[i],o=>mut(t=>t.days[i].memo=o.memo))},
@@ -1038,9 +1041,9 @@ const ACT={
    {k:"kind",label:"類型",type:"select",opts:Object.entries(KINDS).map(([k,v])=>[k,v[0]]),half:1},{k:"mode",label:"怎麼過去",type:"select",opts:[["","（不標示）"],...Object.keys(MODES)],half:1},
    {k:"move",label:"交通補充",ph:"例如：15 分、JR 鹿兒島本線"},{k:"note",label:"說明"},{k:"tip",label:"提醒",ph:"停留 1 小時、門票 ₩2,000"},
    {k:"flag",label:"標記",type:"select",opts:Object.keys(FLAGS).map(k=>[k,FLAGS[k]&&k?k:"（無）"]),half:1},{k:"d",label:"放在哪一天",type:"select",opts:t.days.map((d,k)=>[k,`Day ${k+1}`]),half:1},
-   {k:"q",label:"地圖搜尋字或 Google Maps 連結（定位不準時填）",ph:"留空就用地點名稱"},{k:"must",label:"標成「必去」",type:"check"}],
-   {...it,d:di},o=>{if(!o.name){toast("請填地點");return false}const nd=+o.d;delete o.d;const coord=parseCoord(o.q);
-    mut(t=>{let x;if(j>=0){x=t.days[di].items[j];const qChanged=x.q!==o.q||x.name!==o.name;Object.assign(x,o);if(qChanged){delete x.lat;delete x.lng;delete x.geoFail;delete x.pinned;delete x.geoV}if(nd!==di){t.days[di].items.splice(j,1);t.days[nd].items.push(x)}}
+   {k:"gmap",label:"Google 地圖連結（選填）",ph:"在 Google 地圖按分享 → 複製連結"},{k:"web",label:"網站或 IG 連結（選填）",ph:"https://… 或 @帳號"},{k:"q",label:"地圖搜尋字（定位不準時填）",ph:"留空就用地點名稱"},{k:"must",label:"標成「必去」",type:"check"}],
+   {...it,d:di},o=>{if(!o.name){toast("請填地點");return false}const nd=+o.d;delete o.d;const coord=parseCoord(o.gmap)||parseCoord(o.q);
+    mut(t=>{let x;if(j>=0){x=t.days[di].items[j];const qChanged=x.q!==o.q||x.name!==o.name||(x.gmap||"")!==(o.gmap||"");Object.assign(x,o);if(qChanged){delete x.lat;delete x.lng;delete x.geoFail;delete x.pinned;delete x.geoV}if(nd!==di){t.days[di].items.splice(j,1);t.days[nd].items.push(x)}}
      else{x={id:uid(),...o};t.days[nd].items.push(x)}
      if(coord){x.lat=coord[0];x.lng=coord[1];x.pinned=1;delete x.geoFail;if(/^https?:/.test(x.q))x.q=""}
      t.days[nd].items.sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"))})},
