@@ -232,6 +232,10 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--ink);display:inli
 .ph figure{margin:0;position:relative}
 .ph img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
 .ph button{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.92)}
+.bkph{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:6px 0 8px}
+.bkph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.bkph .small{grid-column:1/-1}
+.page ol li{margin-bottom:3px}
 .ended{text-align:center;padding:26px 16px}
 .edit{display:none!important}body.editing .edit{display:inline-flex!important}
 .editb{display:none!important}body.editing .editb{display:flex!important}
@@ -759,10 +763,15 @@ function renderBook(t){
   <div class="stat"><div><b>${t.days.length}</b><span>天</span></div><div><b>${places}</b><span>個地點</span></div><div><b>${musts}</b><span>必去打卡</span></div></div>
   <div class="acts2 editb"><button data-act="editTrip">${ic("i-pen")}旅程設定・改日期</button></div>`)+
  t.days.map((d,i)=>{const ds=addDays(t.start,i);return `<div class="card page"><div class="dn">DAY ${i+1} ・ ${md(ds)}（${wk(ds)}）</div><h2 style="margin:4px 0 0;font-size:20px">${esc(d.title||"這一天")}</h2>
-  ${d.items.length?`<ol>${d.items.map(it=>`<li>${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</li>`).join("")}</ol>`:""}
+  ${d.items.length?`<ol>${d.items.map((it,j)=>`<li><div style="display:flex;align-items:center;gap:6px"><span style="flex:1">${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</span>${canEdit?proofBtn(t,it,`data-d="${i}" data-j="${j}"`).replace('class="ib"',it.fc?'class="ib"':'class="ib edit"'):""}</div>${it.fc?`<div class="bkph" data-bkph="${it.id}"><div class="small">照片載入中…</div></div>`:""}</li>`).join("")}</ol>`:""}
   ${d.memo?`<div class="memo">${esc(d.memo)}</div>`:canEdit?`<div class="small" style="margin-top:8px">還沒寫下這天的回憶</div>`:""}
   ${canEdit?`<div class="acts2"><button data-act="memo" data-d="${i}">${ic("i-pen")}寫下這天</button></div>`:""}</div>`}).join("");
+ loadBookPhotos();
 }
+const PHC={};
+async function loadBookPhotos(){const tid=curId;for(const el of [...document.querySelectorAll("[data-bkph]")]){const id=el.dataset.bkph;
+  try{const list=PHC[tid+id]||(PHC[tid+id]=await rpc("trip_file_list",{p_trip:tid,p_item:id})||[]);if(curId!==tid)return;
+   const box=document.querySelector(`[data-bkph="${id}"]`);if(box)box.innerHTML=list.map(f=>`<img src="${f.data}" alt="照片" data-big>`).join("")||""}catch(e){el.innerHTML=`<div class="small">照片讀取失敗</div>`}}}
 
 /* ---------- plan + map ---------- */
 function renderPlan(t,bounce){
@@ -916,6 +925,7 @@ document.addEventListener("submit",e=>{const f=e.target.closest("[data-add]");if
  if(k==="packgroup")return mut(t=>t.pack.push({id:uid(),g:parts[0],t:parts[1]||parts[0]}));
  if(k==="sos")return mut(t=>{t.sos.push({id:uid(),l:parts[0],n:parts[1]||""});t.sosAuto=false});
  mut(t=>t[k].push(k==="pack"?{id:uid(),g,t:v}:k==="todo"?{id:uid(),t:v,done:false}:{id:uid(),t:v}))});
+document.addEventListener("click",e=>{const im=e.target.closest("img[data-big]");if(!im)return;openSheet(`<img src="${im.src}" alt="照片" style="width:100%;border-radius:12px;display:block"><div class="acts2"><button data-close>關閉</button></div>`)});
 $("#editToggle").addEventListener("click",()=>{editing=!editing;render()});
 document.body.classList.toggle("motion",!!LS.get("motion",false));
 
@@ -1063,7 +1073,7 @@ $("#pane").addEventListener("click",e=>{const x=e.target.closest("[data-deltrip]
 
 /* ---------- proof photos (票據・訂位證明) ---------- */
 const proof={it:null};
-async function loadProof(it){const el=$("#phList");try{const list=await rpc("trip_file_list",{p_trip:curId,p_item:it.id})||[];if(!$("#phList"))return;
+async function loadProof(it){delete PHC[curId+it.id];const el=$("#phList");try{const list=await rpc("trip_file_list",{p_trip:curId,p_item:it.id})||[];if(!$("#phList"))return;
   if((it.fc||0)!==list.length&&canEdit){it.fc=list.length;save(curId,true)}
   $("#phList").innerHTML=list.map(f=>`<figure><img src="${f.data}" alt="證明照片" data-zoom>${canEdit?`<button class="ib" data-pdel="${f.id}" aria-label="刪除照片">${ic("i-x")}</button>`:""}</figure>`).join("")||`<div class="small">還沒有照片</div>`}
  catch(e){if(el)el.innerHTML=`<div class="small">讀取失敗，請檢查網路</div>`}}
