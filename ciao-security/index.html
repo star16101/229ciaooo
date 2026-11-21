@@ -706,6 +706,23 @@
 .stat-v{font-size:19px;font-weight:700;line-height:1.1;color:#C98A12;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;}
 .stat-u{font-size:10px;font-weight:600;margin-left:1px;}
 .stat-v sup{font-size:11px;font-weight:700;vertical-align:top;position:relative;top:-1px;margin-left:1px;}
+.st-badge{display:inline-block;margin-left:8px;font-size:10.5px;font-weight:700;color:#B66A6A;background:rgba(182,106,106,.14);border:1px solid rgba(182,106,106,.28);border-radius:10px;padding:1px 8px;vertical-align:middle;}
+.pt-legend{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.pt-lg{border-radius:16px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;}
+.pt-lg b{font-size:15px;} .pt-lg span{font-size:11px;font-weight:700;line-height:1.3;} .pt-lg small{font-size:10px;color:var(--ink-soft);line-height:1.35;}
+.ph-f{--t:rgba(126,168,96,.20);--c:#5E8A3E;} .ph-m{--t:rgba(90,160,214,.20);--c:#3F7FB0;} .ph-b{--t:rgba(214,120,140,.20);--c:#B5586F;}
+.pt-lg{background:var(--t);} .pt-lg b{color:var(--c);}
+.pt-scroll{overflow-x:auto;border-radius:20px;box-shadow:var(--raise);-webkit-overflow-scrolling:touch;}
+.pt-tbl{border-collapse:separate;border-spacing:0;width:100%;min-width:100%;font-size:12.5px;background:var(--bg);}
+.pt-tbl th,.pt-tbl td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(0,0,0,.05);}
+.pt-tbl thead th{font-size:11.5px;color:var(--ink-soft);font-weight:700;background:var(--bg);}
+.pt-tbl tbody th{text-align:left;position:sticky;left:0;font-weight:600;color:var(--ink);background:linear-gradient(var(--t),var(--t)),var(--bg);z-index:1;}
+.pt-tbl thead th:first-child{position:sticky;left:0;z-index:2;text-align:left;}
+.pt-tbl tr.ph-f td,.pt-tbl tr.ph-m td,.pt-tbl tr.ph-b td{background:linear-gradient(var(--t),var(--t)),var(--bg);}
+.pt-tbl tr.pt-ph td{text-align:left;font-size:12px;font-weight:700;color:var(--c);padding:7px 10px;letter-spacing:.04em;}
+.pt-tbl tr.pt-ph td b{font-size:15px;margin-right:8px;}
+.pt-v{font-weight:700;color:#C98A12;} .pt-none{color:var(--ink-soft);opacity:.5;} .pt-tot{border-left:1px solid rgba(0,0,0,.06);}
+.pt-rc{display:block;font-size:9.5px;font-weight:700;color:#B66A6A;margin-top:1px;}
 </style>
 </head>
 <body>
@@ -869,8 +886,9 @@ async function loadClientHomeData(){
   state.viewingId = null;
   state.family = await loadFamily(state.activeClientId);
   await loadClientPolicies(state.activeClientId);
-  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code, birthday').eq('id', state.activeClientId).single();
+  const { data: myClient } = await sb.from('ins_clients').select('name, referral_code, birthday, status').eq('id', state.activeClientId).single();
   state.myClient = myClient || null;
+  if(myClient && myClient.status==='檢視中' && !state.clientTabSet){ state.clientTab='table'; state.clientTabSet=true; }
   const { data: myMessages } = await sb.from('ins_messages').select('*').eq('client_id', state.activeClientId).order('created_at', {ascending:false});
   state.myMessages = myMessages || [];
   try{
@@ -1543,6 +1561,50 @@ function renderCoverageTotal(list){
     <div class="hint" style="margin-top:12px;line-height:1.7;">「最高」表示非一次性給付（如實支實付、手術、醫療限額），依實際住院或醫療狀況給付，以此為上限。</div>
   </div>`;
 }
+
+// ---------- 保障總表：前／中／後 × 保險公司 ----------
+const PHASES = [
+  {k:'前', cls:'ph-f', title:'一次性給付', desc:'確診就一次給付：重大傷病、癌症、重大燒燙傷'},
+  {k:'中', cls:'ph-m', title:'依收據、療程或住院天數給付', desc:'醫療實支、定額、日額、癌症療程、意外醫療'},
+  {k:'後', cls:'ph-b', title:'治療結束後，給予生活幫助', desc:'失能、長照、身故'}
+];
+function phaseOfCategory(label){
+  const t = String(label||'');
+  if(/重大傷病|重大疾病|特定傷病|輕度癌症|重度癌症|特定癌症|癌症罹患|初次罹癌|燒燙傷/.test(t)) return '前';
+  if(/身故|失能|長照|扶助/.test(t)) return '後';
+  return '中';
+}
+function renderPhaseTable(policies, coverage){
+  if(!coverage.length) return `<div class="empty">目前還沒有保障資料<br>請聯絡您的業務協助建檔</div>`;
+  const insOf = {}; policies.forEach(p=>{ insOf[p.id] = p.insurer || '其他'; });
+  const insurers = [...new Set(policies.map(p=>p.insurer||'其他'))];
+  const colOf = c => insOf[c.policy_id] || '其他';
+  const cols = insurers.filter(n=>coverage.some(c=>colOf(c)===n));
+  const build = rows=>{
+    const prepared = rows.map(c=>({ category: covCleanLabel(c.category), content: String(c.content||'').trim(), _orig:c.category, phase:'', subgroup:'' }));
+    const merged = mergeSameCategory(prepared).map(m=>({...m, content: covFormatWan(m.content)}));
+    const orig = {}; prepared.forEach(p=>{ if(!orig[p.category]) orig[p.category]=p._orig; });
+    const rc = {}; rows.forEach(c=>{ const m=String(c.source||'').match(/[(（](正本|副本)[)）]\s*$/); if(m){ const k=covCleanLabel(c.category); (rc[k] ||= new Set()).add(m[1]); } });
+    const out = {};
+    merged.forEach(m=>{ out[m.category] = { text: covValueText(orig[m.category]||m.category, m.content), rc: rc[m.category]?[...rc[m.category]]:[] }; });
+    return out;
+  };
+  const per = {}; cols.forEach(n=>{ per[n] = build(coverage.filter(c=>colOf(c)===n)); });
+  const total = build(coverage);
+  const labels = Object.keys(total).sort((a,b)=>covRank(a)-covRank(b));
+  const cell = v => v ? `<span class="pt-v">${esc(v.text)}</span>${v.rc.map(x=>`<small class="pt-rc">${x}</small>`).join('')}` : `<span class="pt-none">—</span>`;
+  const n = cols.length + 2;
+  const body = PHASES.map(ph=>{
+    const rows = labels.filter(l=>phaseOfCategory(l)===ph.k);
+    if(!rows.length) return '';
+    return `<tr class="pt-ph ${ph.cls}"><td colspan="${n}"><b>${ph.k}</b><span>${esc(ph.title)}</span></td></tr>`
+      + rows.map(l=>`<tr class="${ph.cls}"><th>${esc(l)}</th>${cols.map(c=>`<td>${cell(per[c][l])}</td>`).join('')}<td class="pt-tot">${cell(total[l])}</td></tr>`).join('');
+  }).join('');
+  return `<div class="pt-legend">${PHASES.map(ph=>`<div class="pt-lg ${ph.cls}"><b>${ph.k}</b><span>${esc(ph.title)}</span><small>${esc(ph.desc)}</small></div>`).join('')}</div>
+    <div class="pt-scroll"><table class="pt-tbl"><thead><tr><th>給付項目</th>${cols.map(c=>`<th>${esc(c.replace(/人壽$/,'').replace(/保險$/,''))}</th>`).join('')}<th class="pt-tot">合計</th></tr></thead><tbody>${body}</tbody></table></div>
+    <div class="hint" style="margin-top:12px;line-height:1.7;">依各家保險公司分欄，「最高」表示依實際醫療狀況、以此為上限給付。紅色字為收據類型（正本／副本）。</div>`;
+}
+
 function renderCoverageGrouped(list, editable){
   if(!list.length) return `<div class="empty" style="padding:20px;">尚未新增保障內容</div>`;
   const groups = new Map();
@@ -1760,7 +1822,9 @@ function surnameStrokes(sn){
 function renderAdminHome(){
   const strokeCollator = new Intl.Collator('zh-Hant-TW-u-co-stroke');
   const q = (state.clientSearch||'').trim();
-  const filtered = q ? state.clients.filter(c=>c.name.includes(q)) : state.clients;
+  const stf = state.statusFilter || '';
+  const base = stf ? state.clients.filter(c=>(c.status||'客戶')===stf) : state.clients;
+  const filtered = q ? base.filter(c=>c.name.includes(q)) : base;
   const sorted = [...filtered].sort((a,b)=>{
     const sa=surnameOf(a.name), sb=surnameOf(b.name);
     const d=surnameStrokes(sa)-surnameStrokes(sb);
@@ -1799,6 +1863,7 @@ function renderAdminHome(){
       </div>
 
       <div class="section-title">客戶名單・共 ${state.clients.length} 位</div>
+      <div class="chip-row">${[['','全部'],['客戶','客戶'],['檢視中','檢視中']].map(([v,l])=>`<button class="chip ${stf===v?'active':''}" data-stf="${v}">${l}<small>${v?state.clients.filter(c=>(c.status||'客戶')===v).length:state.clients.length}</small></button>`).join('')}</div>
       ${surnames.length>1 ? `<div class="chip-row"><button class="chip ${!sf?'active':''}" data-sn="">全部</button>${surnames.map(n=>`<button class="chip ${sf===n?'active':''}" data-sn="${esc(n)}">${esc(n)}<small>${state.clients.filter(c=>surnameOf(c.name)===n).length}</small></button>`).join('')}</div>` : ''}
       <div class="field" style="margin-bottom:14px;">
         <input id="client-search" placeholder="搜尋客戶姓名" value="${esc(state.clientSearch||'')}">
@@ -1807,7 +1872,7 @@ function renderAdminHome(){
         ${shown.length===0 ? `<div class="empty">${ILLUS_EMPTY}${q? '找不到符合的客戶':'尚未新增客戶<br>點右下角 + 新增第一位客戶'}</div>` :
           shown.map(c=>{ const sn=surnameOf(c.name); const head = (!sf && sn!==lastSn) ? `<div class="sn-head">${esc(sn)}<span>${state.clients.filter(c=>surnameOf(c.name)===sn).length} 位</span></div>` : ''; lastSn=sn; return head+`
             <div class="client-row" data-id="${c.id}">
-              <div><div class="cname">${esc(c.name)}</div><div class="ccount">${c.count} 張保單${(()=>{ const a=ageFromBirthday(c.birthday); return a!=null?'・'+a+' 歲':''; })()}</div><div class="cact">${activityText(c.id)}</div></div>
+              <div><div class="cname">${esc(c.name)}${c.status==='檢視中'?'<span class="st-badge">檢視中</span>':''}</div><div class="ccount">${c.count} 張保單${(()=>{ const a=ageFromBirthday(c.birthday); return a!=null?'・'+a+' 歲':''; })()}</div><div class="cact">${activityText(c.id)}</div></div>
               <div style="display:flex;align-items:center;gap:14px;">
                 <span style="cursor:pointer;color:var(--ink-soft);" data-edit-client="${c.id}">✎</span>
                 <span style="cursor:pointer;color:var(--danger);" data-del-client="${c.id}">✕</span>
@@ -1834,6 +1899,7 @@ function renderAdminHome(){
   document.getElementById('go-referrals').onclick = ()=>{ state.view='admin-referrals'; render(); };
   const searchInput = document.getElementById('client-search');
   searchInput.oninput = ()=>{ state.clientSearch = searchInput.value; render(); document.getElementById('client-search').focus(); };
+  app.querySelectorAll('[data-stf]').forEach(el=>el.onclick=()=>{ state.statusFilter=el.dataset.stf; render(); });
   app.querySelectorAll('[data-sn]').forEach(el=>el.onclick=()=>{ state.surnameFilter=el.dataset.sn; render(); });
   app.querySelectorAll('.client-row').forEach(el=>{
     el.onclick = async ()=>{
@@ -1916,6 +1982,7 @@ function openEditClientModal(c){
     <div class="modal-title">編輯客戶</div>
     <div class="field"><label>客戶姓名</label><input id="ec-name" value="${esc(c.name)}" required></div>
     <div class="field"><label>生日（用來計算年紀與建議保額）</label><input id="ec-bd" type="date" value="${c.birthday||''}"></div>
+    <div class="field"><label>狀態</label><select id="ec-st"><option value="客戶" ${(c.status||'客戶')==='客戶'?'selected':''}>客戶</option><option value="檢視中" ${c.status==='檢視中'?'selected':''}>檢視中（保單檢視，尚未成為客戶）</option></select></div>
     <div class="btn-row">
       <button class="btn btn-secondary" id="ec-cancel">取消</button>
       <button class="btn btn-primary" id="ec-save">儲存</button>
@@ -1926,7 +1993,7 @@ function openEditClientModal(c){
     const name = document.getElementById('ec-name').value.trim();
     if(!name) return;
     const bd = document.getElementById('ec-bd').value||null;
-    await sb.from('ins_clients').update({name, birthday: bd}).eq('id', c.id);
+    await sb.from('ins_clients').update({name, birthday: bd, status: document.getElementById('ec-st').value}).eq('id', c.id);
     closeModal();
     await loadClients();
     render();
@@ -2229,13 +2296,14 @@ function openAddClientModal(){
     <div class="modal-title">新增客戶</div>
     <div class="field"><label>客戶姓名</label><input id="nc-name" placeholder="例如：陳小姐" required></div>
     <div class="field"><label>生日（可之後再填）</label><input id="nc-bd" type="date"></div>
+    <div class="field"><label>狀態</label><select id="nc-st"><option value="客戶">客戶</option><option value="檢視中">檢視中（保單檢視，尚未成為客戶）</option></select></div>
     <button class="btn btn-primary" id="nc-save">建立</button>
   `);
   document.getElementById('nc-save').onclick = async ()=>{
     const name = document.getElementById('nc-name').value.trim();
     if(!name) return;
     const bd = document.getElementById('nc-bd').value||null;
-    const { data, error } = await sb.from('ins_clients').insert({name, ...(bd?{birthday:bd}:{})}).select().single();
+    const { data, error } = await sb.from('ins_clients').insert({name, status: document.getElementById('nc-st').value, ...(bd?{birthday:bd}:{})}).select().single();
     closeModal();
     if(error){ setMsg('error','新增失敗'); return; }
     await loadClients();
@@ -2920,6 +2988,10 @@ function renderClientHome(){
       ${shownCoverage.length ? `
         <div class="section-title" style="margin-top:30px;">保障總和${flt?`・${esc(flt)}`:''}</div>
         ${renderCoverageTotal(shownCoverage)}` : ''}`;
+  } else if(tab==='table'){
+    body = `
+      <div class="section-title">保障總表</div>
+      ${renderPhaseTable(state.policies, state.coverage)}`;
   } else if(tab==='gap'){
     body = `
       <div class="section-title">保障缺口檢視</div>
@@ -3001,6 +3073,7 @@ function renderClientHome(){
       </div></div>` : ''}
       <div class="tabs">
         <div class="tab ${tab==='policies'?'active':''}" data-ctab="policies">保單</div>
+        <div class="tab ${tab==='table'?'active':''}" data-ctab="table">總表</div>
         <div class="tab ${tab==='gap'?'active':''}" data-ctab="gap">缺口${missing.length&&hasData?`<i class="dot"></i>`:''}</div>
       </div>
       ${body}
@@ -3013,7 +3086,7 @@ function renderClientHome(){
   document.getElementById('open-games').onclick = openGamesMenu;
   app.querySelectorAll('[data-fam]').forEach(el=>el.onclick=()=>switchViewing(el.dataset.fam));
   app.querySelectorAll('[data-ins]').forEach(el=>el.onclick=()=>{ state.insurerFilter=el.dataset.ins; render(); });
-  app.querySelectorAll('[data-ctab]').forEach(el=>el.onclick=()=>{ state.clientTab=el.dataset.ctab; render(); window.scrollTo(0,0); });
+  app.querySelectorAll('[data-ctab]').forEach(el=>el.onclick=()=>{ state.clientTabSet=true; state.clientTab=el.dataset.ctab; render(); window.scrollTo(0,0); });
   app.querySelectorAll('[data-detail]').forEach(el=>{
     el.onclick = ()=>{ state.activePolicyId = el.dataset.detail; state.view = 'client-policy'; render(); };
   });
