@@ -210,24 +210,37 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--ink);display:inli
 .pick .cities button{min-height:32px;padding:2px 10px;font-size:13px}
 .pick .cities button.lib{background:var(--t-yellow);border-color:transparent}
 .pick .cities button.on{background:var(--ink);color:#fff}
-.shelf .swx{width:60px;border-radius:0 10px 10px 0}
 .pick .ctry{font-size:12px;color:var(--mute);padding:6px 4px 0;width:100%}
 /* swipe-to-delete */
 .sw{position:relative;overflow:hidden}
 .sw>.swc{position:relative;z-index:1;background:inherit;transition:transform .2s ease;will-change:transform}
 .sw.drag>.swc{transition:none}
+.sw:not(.drag):not(.open)>.swx{visibility:hidden}
 .sw>.swx{position:absolute;right:0;top:0;bottom:0;width:76px;border:0;border-radius:0;background:#d9705c;color:#fff;font-size:14px;min-height:0}
 .chk li.sw{display:block}.chk li.sw>.swc{background:#fff;display:flex}
 .tripitem{margin-bottom:6px;border-radius:14px}
 .tripitem>.swc{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;border-radius:14px;background:#fff;border:1px solid var(--line);padding:9px 12px;gap:8px}
 .tripitem.cur>.swc{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-.shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px;padding:10px 4px 14px;border-bottom:6px solid #d9c9b4;margin-bottom:12px}
+.cases{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:4px -2px 0;padding:2px}
+.cases::-webkit-scrollbar{display:none}
+.case{flex:0 0 100%;scroll-snap-align:center;background:#7a4d30;border-radius:14px;padding:9px 9px 4px;box-shadow:0 4px 10px rgba(62,58,57,.18)}
+.cin{background:#ead8bd;border-radius:6px;padding:12px 10px 0;box-shadow:inset 0 6px 10px rgba(90,55,30,.18)}
+.crow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;padding:0 4px}
+.board{height:11px;background:#9a6a46;margin:0 -10px 14px;border-bottom:4px solid #6e4529}
+.cin .board:last-child{margin-bottom:0}
+.cfoot{text-align:center;color:#f3e3cc;font-size:11px;letter-spacing:.2em;padding:3px 0 1px}
+.cdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.cdots i{width:6px;height:6px;border-radius:50%;background:#d6ccc0}.cdots i.on{background:var(--ink)}
+.slot{position:relative}
+.bk.empty{opacity:.5;filter:saturate(.6);pointer-events:none}
+.bkx{display:none;position:absolute;top:-6px;right:-4px;width:24px;height:24px;min-height:0!important;padding:0!important;border-radius:50%!important;background:#d9705c!important;color:#fff!important;border:2px solid #fff!important;font-size:12px!important}
+.manage .bkx{display:inline-flex}.bkx[data-arm]{width:auto;padding:0 8px!important;border-radius:12px!important}.manage .bk{animation:wob .3s ease-in-out infinite alternate}
+@keyframes wob{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
 .bk{position:relative;width:100%;aspect-ratio:360/447;padding:0;border:0;background:url(book.webp) center/100% 100% no-repeat;min-height:0;display:block;filter:drop-shadow(0 4px 6px rgba(62,58,57,.18))}
 .bkt{position:absolute;left:19%;right:9%;top:9%;bottom:20%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:#5b3a22;line-height:1.25}
 .bkt b{font-size:clamp(13px,3.8vw,16px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
 .bkt i{display:block;width:40%;border-top:1px solid rgba(91,58,34,.35)}
 .bkt small{font-size:10px;opacity:.75;font-style:normal}
-.shelf .sw{background:transparent}.shelf .sw>.swc{background:transparent}
+
 .drop{position:fixed;left:0;right:0;bottom:0;z-index:800;display:none;gap:6px;overflow-x:auto;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(62,58,57,.94)}
 .drop.on{display:flex}
 .drop span{flex:none;color:#fff;font-size:12px;align-self:center;margin-right:4px}
@@ -1031,11 +1044,16 @@ const ACT={
   <label class="f"><span>補充（選填）</span><input id="pm_move" value="${esc(it.move||"")}" placeholder="例如：區間車到瑞芳、1 號出口"></label>
   <div class="small">選火車、捷運、高鐵或巴士，會估算搭乘時間＋下車走路時間</div><div class="acts2"><button data-close>關閉</button></div>`);
   $("#pane").querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{const mv=$("#pm_move").value.trim();mut(t=>{const x=t.days[di].items[j];x.mode=b.dataset.pm;x.move=mv});closeSheet()})},
- shelf(){const list=Object.entries(trips).filter(([,t])=>statusOf(t)==="after").sort((a,b)=>b[1].end.localeCompare(a[1].end));
-  const rows=[];for(let i=0;i<list.length;i+=3)rows.push(list.slice(i,i+3));
-  openSheet(`<h2 style="font-size:18px">${ic("i-book")}回憶書櫃<span class="r">${list.length} 本・只有你看得到</span></h2>
-  ${list.length?`<div class="shelf">${list.map(([id,t],k)=>sw(`<button class="bk" data-pick="${id}"><span class="bkt"><b>${esc(t.name)}</b><i></i><small>${t.start.slice(0,4)}<br>${md(t.start)}–${md(t.end)}</small></span></button>`,`data-deltrip="${id}"`,"","div",`style="border-radius:6px"`)).join("")}</div><div class="small" style="font-size:11px">點書打開；往左滑可以刪除。旅伴的連結只看得到那一趟，而且結束後只會看到「旅程已結束」，看不到你的筆記（想分享可在旅程設定打開）。</div>`:`<div class="small">旅程結束後會自動變成回憶書收進這裡</div>`}
-  <div class="acts2"><button data-close>關閉</button></div>`)},
+ shelf(manage){const list=Object.entries(trips).filter(([,t])=>statusOf(t)==="after").sort((a,b)=>b[1].end.localeCompare(a[1].end));
+  const pages=Math.max(1,Math.ceil(list.length/6)),slot=k=>{const e=list[k];if(!e)return`<div class="slot"><div class="bk empty"></div></div>`;const[id,t]=e;
+   return`<div class="slot"><button class="bk" data-pick="${id}"><span class="bkt"><b>${esc(t.name)}</b><i></i><small>${t.start.slice(0,4)}<br>${md(t.start)}–${md(t.end)}</small></span></button><button class="bkx" data-deltrip="${id}" aria-label="刪除這本">✕</button></div>`};
+  openSheet(`<h2 style="font-size:18px">${ic("i-book")}回憶書櫃<span class="r"><b style="color:var(--ink)">${list.length}</b> 本回憶書・只有你看得到</span></h2>
+  <div class="cases ${manage?"manage":""}" id="cases">${Array.from({length:pages},(_,p)=>`<div class="case"><div class="cin"><div class="crow">${[0,1,2].map(k=>slot(p*6+k)).join("")}</div><div class="board"></div><div class="crow">${[3,4,5].map(k=>slot(p*6+k)).join("")}</div><div class="board"></div></div><div class="cfoot">第 ${p+1} 櫃</div></div>`).join("")}</div>
+  ${pages>1?`<div class="cdots" id="cdots">${Array.from({length:pages},(_,p)=>`<i class="${p?"":"on"}"></i>`).join("")}</div>`:""}
+  <div class="small" style="margin-top:8px">點書打開${pages>1?"；往左滑看下一櫃":""}。旅程結束後會自動收進來；旅伴的連結看不到你的回憶書（想分享可在旅程設定打開）。</div>
+  <div class="acts2">${list.length?`<button id="shelfManage">${manage?"完成整理":"整理（刪除）"}</button>`:""}<button data-close>關閉</button></div>`);
+  $("#shelfManage")?.addEventListener("click",()=>ACT.shelf(!manage));
+  const cs=$("#cases"),dots=$("#cdots");if(dots)cs.addEventListener("scroll",()=>{const p=Math.round(cs.scrollLeft/cs.clientWidth);dots.querySelectorAll("i").forEach((d,k)=>d.classList.toggle("on",k===p))},{passive:true})},
  proof(a){const t=T();let it,label;if(a.dataset.s!=null){it=t.spots[+a.dataset.s]}else{it=t.days[+a.dataset.d].items[+a.dataset.j]}if(!it)return;it.id=it.id||uid();
   openSheet(`<h2 style="font-size:18px">${ic("i-cam")}${esc(it.name)}</h2><div class="small">照片和小筆記會收進回憶書的這一天；票據、訂位證明也可以放這裡</div>
   ${canEdit?`<label class="f" style="margin:10px 0 6px"><span>這站的小筆記</span><textarea id="pnote" style="min-height:70px" placeholder="好吃嗎？好玩嗎？當下的心情…">${esc(it.memo||"")}</textarea></label><div class="note2" id="pnoteSt" style="margin:0 0 8px"></div>`:it.memo?`<div class="memo">${esc(it.memo)}</div>`:""}
@@ -1144,7 +1162,7 @@ $("#shelfBtn").addEventListener("click",()=>ACT.shelf());
 $("#foodBtn").addEventListener("click",()=>openFood());
 $("#pane").addEventListener("change",e=>{if(e.target.id==="motionChk"){LS.set("motion",e.target.checked);document.body.classList.toggle("motion",e.target.checked)}});
 $("#pane").addEventListener("click",e=>{const x=e.target.closest("[data-deltrip]");if(x){if(!x.dataset.arm){x.dataset.arm=1;x.textContent="確定？";return}
- const id=x.dataset.deltrip;delete trips[id];rpc("trip_delete",{p_pass:pass,p_id:id}).then(()=>toast("已刪除")).catch(()=>toast("刪除失敗"));if(curId===id){curId=defaultTrip();setHash(curId)}x.closest(".sw").remove();return}
+ const id=x.dataset.deltrip;delete trips[id];rpc("trip_delete",{p_pass:pass,p_id:id}).then(()=>toast("已刪除")).catch(()=>toast("刪除失敗"));if(curId===id){curId=defaultTrip();setHash(curId)}const swr=x.closest(".sw");if(swr)swr.remove();else ACT.shelf(true);return}
  const b=e.target.closest("[data-pick]");if(!b)return;curId=b.dataset.pick;dayIdx=null;setHash(curId);view="home";closeSheet();window.scrollTo(0,0)});
 
 /* ---------- 全台覓食手帳 (Taiwan food finder, owner tool) ---------- */
