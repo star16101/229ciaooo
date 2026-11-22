@@ -766,14 +766,14 @@ async function computeLegs(){if(legBusy)return;legBusy=true;
    document.querySelectorAll(`[data-leg="${CSS.escape(key)}"]`).forEach(x=>{x.removeAttribute("data-leg");x.textContent=legText(m,LEG[key])+(x.textContent.startsWith("計算中…")?x.textContent.slice(4):"")});
    await sleep(250)}}
  finally{legBusy=false}}
-function proofBtn(t,it,attr){return canEdit||it.fc?`<button class="ib" data-act="proof" ${attr} aria-label="票據・訂位證明">${ic("i-cam")}${it.fc?`<span class="cnt">${it.fc}</span>`:""}</button>`:""}
+function proofBtn(t,it,attr){return canEdit||it.fc||it.memo?`<button class="ib" data-act="proof" ${attr} aria-label="票據・訂位證明">${ic("i-cam")}${it.fc?`<span class="cnt">${it.fc}</span>`:""}</button>`:""}
 function timeline(t,di,compact){const d=t.days[di];if(!d.items.length)return `<div class="small">這天還沒有行程${canEdit?"，按右上「編輯」新增":""}</div>`;
  return `<div class="tl" data-tl="${di}">${d.items.map((it,j)=>{const col=KINDS[it.kind]?.[2]||"var(--k-spot)";
   return `${j>0?legRow(t,d.items[j-1],it,di,j):""}
   <div class="ev ${it.must?"must":""}" data-n="${j}" data-id="${it.id}"><div class="tm num"><b>${esc(it.time||"")}</b>${it.end?`<small>${esc(it.end)}</small>`:""}</div><div class="card" style="--kc:${col}">
   <div class="hd"><b>${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</b>${proofBtn(t,it,`data-d="${di}" data-j="${j}"`)}${webBtn(it,1)}${mapBtns(t,it,"",1)}<button class="edit ib" data-act="editItem" data-d="${di}" data-j="${j}" aria-label="編輯">${ic("i-pen")}</button></div>
   <div class="meta">${it.geoFail&&canEdit?`<button class="geofix" data-act="fixGeo" data-d="${di}" data-j="${j}">${ic("i-pin")}找不到位置・貼上 Google 地址或連結</button>`:""}${it.flag?`<span class="flag ${FLAGS[it.flag]}">${it.flag}</span>`:""}${it.type?`<span class="chip">${esc(it.type)}</span>`:""}</div>
-  ${!compact&&it.note?`<div class="nt">${esc(it.note)}</div>`:""}${!compact&&(it.tip||it.price)?`<div class="nt tp">${esc([it.tip,it.price].filter(Boolean).join("・"))}</div>`:""}
+  ${!compact&&it.note?`<div class="nt">${esc(it.note)}</div>`:""}${it.memo?`<div class="nt" style="color:var(--ink);-webkit-line-clamp:3">📝 ${esc(it.memo)}</div>`:""}${!compact&&(it.tip||it.price)?`<div class="nt tp">${esc([it.tip,it.price].filter(Boolean).join("・"))}</div>`:""}
   </div></div>`}).join("")}</div>`}
 function tipsCard(t){if(!t.tips.length&&!canEdit)return"";return `<div class="card"><h2>${dot("i-bulb")}小提醒</h2>${t.tips.map(x=>sw(`<div style="display:flex;gap:8px;padding:6px 0;background:#fff;font-size:14px"><span style="color:#5f9a4b">✓</span><span>${x.h?`<b>${esc(x.h)}</b>　`:""}${esc(x.t)}</span></div>`,`data-del="tips" data-id="${x.id}"`,"","div",`style="border-bottom:1px solid var(--soft)"`)).join("")||`<div class="small">還沒有提醒</div>`}${addRow("tips","新增提醒")}</div>`}
 function nearCard(t){return `<div class="card"><h2>${dot("i-pin")}找我附近的</h2><div class="grid">${NEAR.map(([l,q,i])=>`<a class="btn" href="https://www.google.com/maps/search/${encodeURIComponent(q)}" target="_blank" rel="noopener">${ic(i)}${l}</a>`).join("")}</div><div class="small" style="margin-top:8px">用你目前的位置在 Google Maps 搜尋</div></div>`}
@@ -799,7 +799,7 @@ function renderBook(t){
   <div class="stat"><div><b>${t.days.length}</b><span>天</span></div><div><b>${places}</b><span>個地點</span></div><div><b>${musts}</b><span>必去打卡</span></div></div>
   <div class="acts2 editb"><button data-act="editTrip">${ic("i-pen")}旅程設定・改日期</button></div>`)+
  t.days.map((d,i)=>{const ds=addDays(t.start,i);return `<div class="card page"><div class="dn">DAY ${i+1} ・ ${md(ds)}（${wk(ds)}）</div><h2 style="margin:4px 0 0;font-size:20px">${esc(d.title||"這一天")}</h2>
-  ${d.items.length?`<ol>${d.items.map((it,j)=>`<li><div style="display:flex;align-items:center;gap:6px"><span style="flex:1">${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</span>${canEdit?proofBtn(t,it,`data-d="${i}" data-j="${j}"`).replace('class="ib"',it.fc?'class="ib"':'class="ib edit"'):""}</div>${it.fc?`<div class="bkph" data-bkph="${it.id}"><div class="small">照片載入中…</div></div>`:""}</li>`).join("")}</ol>`:""}
+  ${d.items.length?`<ol>${d.items.map((it,j)=>`<li><div style="display:flex;align-items:center;gap:6px"><span style="flex:1">${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</span>${canEdit?proofBtn(t,it,`data-d="${i}" data-j="${j}"`).replace('class="ib"',it.fc?'class="ib"':'class="ib edit"'):""}</div>${it.memo?`<div class="small" style="color:var(--ink);margin:2px 0 4px">📝 ${esc(it.memo)}</div>`:""}${it.fc?`<div class="bkph" data-bkph="${it.id}"><div class="small">照片載入中…</div></div>`:""}</li>`).join("")}</ol>`:""}
   ${d.memo?`<div class="memo">${esc(d.memo)}</div>`:canEdit?`<div class="small" style="margin-top:8px">還沒寫下這天的回憶</div>`:""}
   ${canEdit?`<div class="acts2"><button data-act="memo" data-d="${i}">${ic("i-pen")}寫下這天</button></div>`:""}</div>`}).join("");
  loadBookPhotos();
@@ -980,7 +980,7 @@ $("#editToggle").addEventListener("click",()=>{editing=!editing;render()});
 document.body.classList.toggle("motion",!!LS.get("motion",false));
 
 function openSheet(html){$("#pane").innerHTML=html;$("#sheet").classList.add("open")}
-function closeSheet(){$("#sheet").classList.remove("open");$("#pane").innerHTML="";render()}
+function closeSheet(){if(proof.commit){proof.commit();proof.commit=null}$("#sheet").classList.remove("open");$("#pane").innerHTML="";render()}
 $("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"||e.target.closest("[data-close]"))closeSheet()});
 addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#sheet").classList.contains("open"))closeSheet()});
 function form(title,fields,vals,onSave,onDel,extra=""){
@@ -1037,10 +1037,12 @@ const ACT={
   ${list.length?`<div class="shelf">${list.map(([id,t],k)=>sw(`<button class="bk" data-pick="${id}"><span class="bkt"><b>${esc(t.name)}</b><i></i><small>${t.start.slice(0,4)}<br>${md(t.start)}–${md(t.end)}</small></span></button>`,`data-deltrip="${id}"`,"","div",`style="border-radius:6px"`)).join("")}</div><div class="small" style="font-size:11px">點書打開；往左滑可以刪除。旅伴的連結只看得到那一趟，而且結束後只會看到「旅程已結束」，看不到你的筆記（想分享可在旅程設定打開）。</div>`:`<div class="small">旅程結束後會自動變成回憶書收進這裡</div>`}
   <div class="acts2"><button data-close>關閉</button></div>`)},
  proof(a){const t=T();let it,label;if(a.dataset.s!=null){it=t.spots[+a.dataset.s]}else{it=t.days[+a.dataset.d].items[+a.dataset.j]}if(!it)return;it.id=it.id||uid();
-  openSheet(`<h2 style="font-size:18px">${ic("i-cam")}${esc(it.name)}</h2><div class="small">票據、訂位證明、門票、收據的照片，旅伴也看得到</div>
-  ${canEdit?`<label class="btn pri" style="margin-top:10px;width:100%">${ic("i-plus")}拍照或選照片<input type="file" accept="image/*" id="proofIn" data-item="${it.id}" hidden multiple></label>`:""}
+  openSheet(`<h2 style="font-size:18px">${ic("i-cam")}${esc(it.name)}</h2><div class="small">照片和小筆記會收進回憶書的這一天；票據、訂位證明也可以放這裡</div>
+  ${canEdit?`<label class="f" style="margin:10px 0 6px"><span>這站的小筆記</span><textarea id="pnote" style="min-height:70px" placeholder="好吃嗎？好玩嗎？當下的心情…">${esc(it.memo||"")}</textarea></label><div class="note2" id="pnoteSt" style="margin:0 0 8px"></div>`:it.memo?`<div class="memo">${esc(it.memo)}</div>`:""}
+  ${canEdit?`<label class="btn pri" style="margin-top:4px;width:100%">${ic("i-plus")}拍照或選照片<input type="file" accept="image/*" id="proofIn" data-item="${it.id}" hidden multiple></label>`:""}
   <div class="ph" id="phList"><div class="small">讀取中…</div></div><div class="acts2"><button data-close>關閉</button></div>`);
-  proof.it=it;loadProof(it)},
+  proof.it=it;loadProof(it);
+  const pn=$("#pnote");if(pn){let tm;pn.addEventListener("input",()=>{clearTimeout(tm);$("#pnoteSt").textContent="…";tm=setTimeout(commit,700)});const commit=()=>{clearTimeout(tm);const v=pn.value.trim();if(v===(it.memo||""))return;it.memo=v;save(curId,true);const st=$("#pnoteSt");if(st)st.textContent="✓ 已存"};pn.addEventListener("blur",commit);proof.commit=commit}},
 
  goToday(){view="plan";dayIdx=diffDays(T().start,todayTW());render();window.scrollTo(0,0)},
  copyLink(){const url=location.origin+location.pathname+"#t-"+curId;(navigator.clipboard?.writeText(url)||Promise.reject()).then(()=>toast("已複製，貼給旅伴就好")).catch(()=>toast("請長按下方網址複製"))},
