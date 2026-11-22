@@ -146,6 +146,8 @@ button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible
 .ev .nt{font-size:12px;color:var(--mute);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ev .nt.open{-webkit-line-clamp:unset}
 .ev .nt.tp{color:#b5603a;-webkit-line-clamp:1}
+.geofix{min-height:26px!important;padding:1px 9px!important;font-size:11.5px!important;border-radius:8px!important;background:var(--t-coral)!important;border:0!important;color:#9a3f2e!important;gap:3px!important}
+.geofix svg{width:13px;height:13px}
 .mustb{display:inline-block;font-size:11px;padding:0 6px;border-radius:6px;background:var(--t-coral);color:#b94a36;margin-right:5px;vertical-align:1px}
 .flag{display:inline-block;font-size:11px;padding:0 7px;border-radius:6px;margin:0}
 .flag.f-warn{background:var(--t-yellow)}.flag.f-check{background:var(--t-green)}.flag.f-ok{background:var(--t-mizu)}
@@ -768,7 +770,7 @@ function timeline(t,di,compact){const d=t.days[di];if(!d.items.length)return `<d
   return `${j>0?legRow(t,d.items[j-1],it,di,j):""}
   <div class="ev ${it.must?"must":""}" data-n="${j}" data-id="${it.id}"><div class="tm num"><b>${esc(it.time||"")}</b>${it.end?`<small>${esc(it.end)}</small>`:""}</div><div class="card" style="--kc:${col}">
   <div class="hd"><b>${it.must?`<span class="mustb">必去</span>`:""}${esc(it.name)}</b>${proofBtn(t,it,`data-d="${di}" data-j="${j}"`)}${webBtn(it,1)}${mapBtns(t,it,"",1)}<button class="edit ib" data-act="editItem" data-d="${di}" data-j="${j}" aria-label="編輯">${ic("i-pen")}</button></div>
-  <div class="meta">${it.flag?`<span class="flag ${FLAGS[it.flag]}">${it.flag}</span>`:""}${it.type?`<span class="chip">${esc(it.type)}</span>`:""}</div>
+  <div class="meta">${it.geoFail&&canEdit?`<button class="geofix" data-act="fixGeo" data-d="${di}" data-j="${j}">${ic("i-pin")}找不到位置・貼上 Google 地址或連結</button>`:""}${it.flag?`<span class="flag ${FLAGS[it.flag]}">${it.flag}</span>`:""}${it.type?`<span class="chip">${esc(it.type)}</span>`:""}</div>
   ${!compact&&it.note?`<div class="nt">${esc(it.note)}</div>`:""}${!compact&&(it.tip||it.price)?`<div class="nt tp">${esc([it.tip,it.price].filter(Boolean).join("・"))}</div>`:""}
   </div></div>`}).join("")}</div>`}
 function tipsCard(t){if(!t.tips.length&&!canEdit)return"";return `<div class="card"><h2>${dot("i-bulb")}小提醒</h2>${t.tips.map(x=>sw(`<div style="display:flex;gap:8px;padding:6px 0;background:#fff;font-size:14px"><span style="color:#5f9a4b">✓</span><span>${x.h?`<b>${esc(x.h)}</b>　`:""}${esc(x.t)}</span></div>`,`data-del="tips" data-id="${x.id}"`,"","div",`style="border-bottom:1px solid var(--soft)"`)).join("")||`<div class="small">還沒有提醒</div>`}${addRow("tips","新增提醒")}</div>`}
@@ -842,6 +844,11 @@ const needGeo=it=>!it.pinned&&it.geoV!==3;
 function radOf(t){const s=(t.lib||"")+"|"+(t.dest||"");for(const k in RAD)if(s.includes(k))return RAD[k];return .5}
 function cands(it,t){const out=[];const add=s=>{s=(s||"").replace(/[📸🤿]/gu,"").trim();if(s&&!out.includes(s))out.push(s)};add(it.q);
  const par=(it.name.match(/[（(]([^）)]+)[）)]/)||[])[1];if(par&&!/^\d|停留|約/.test(par))add(par);const base=it.name.replace(/[（(][^）)]*[）)]/g,"").replace(/[・|｜].*$/,"").replace(/[\u{1F300}-\u{1FAFF}]/gu,"").trim();add(base);add(it.name);const dk=(t.dest||"").replace(/^(日本|韓國|台灣|泰國|中國)/,"");if(dk&&!base.includes(dk))add(dk+" "+base);return out.slice(0,4)}
+async function photon(q,c,rd){const r=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1${c?`&lat=${c[0]}&lon=${c[1]}`:""}`);const j=await r.json();const f=j.features?.[0];if(!f)return null;const p=[f.geometry.coordinates[1],f.geometry.coordinates[0]];return!c||!rd||(Math.abs(p[0]-c[0])<=rd&&Math.abs(p[1]-c[1])<=rd)?p:null}
+async function resolveLink(u){if(!/^https?:\/\//i.test(u||""))return null;const c=parseCoord(u);if(c)return{lat:c[0],lng:c[1]};try{const r=await fetch(SB+"/functions/v1/trip-resolve?u="+encodeURIComponent(u));const j=await r.json();return j.lat!=null?j:null}catch(e){return null}}
+const addrCands=q=>{if(!q||/^https?:/i.test(q))return[];const out=[],add=x=>{x=x.trim().replace(/^[,，\s]+|[,，\s]+$/g,"");if(x&&!out.includes(x))out.push(x)};
+ const b=q.replace(/日本|Japan|台灣|Taiwan|대한민국|South Korea/gi,"").replace(/〒?\s*\d{3}-\d{4}/g,"").replace(/\d{3,6}\s*$/,"");add(b);const parts=b.split(/[,，]/).map(x=>x.trim()).filter(Boolean);
+ if(parts.length>1){add(parts.map(p=>p.replace(/^\d+[-\d]*\s*/,"")).filter(Boolean).join(", "));add(parts.slice(1).join(", "))}add(b.replace(/\d+(-\d+)*/g," ").replace(/\s+/g," "));return out}
 async function nomi(q,c,rd=1.2){const vb=c?`&viewbox=${c[1]-rd},${c[0]+rd},${c[1]+rd},${c[0]-rd}&bounded=1`:"";
  const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=zh-TW&q=${encodeURIComponent(q)}${vb}`);const j=await r.json();return j[0]?[+j[0].lat,+j[0].lon]:null}
 async function geocodeCenter(t){if(t.center||t._cTried||!t.dest)return;t._cTried=1;try{const r=await nomi(t.dest,null);if(r){t.center=r;if(canEdit)save(curId,true);loadWeather(t)}}catch(e){}}
@@ -849,7 +856,11 @@ async function geocodeDay(t,di){if(geoBusy)return;geoBusy=true;const c=centerOf(
  const ok=p=>!c||(Math.abs(p[0]-c[0])<=rd*1.05&&Math.abs(p[1]-c[1])<=rd*1.05);
  try{for(const it of t.days[di].items){if(!needGeo(it))continue;delete it.lat;delete it.lng;delete it.geoFail;const ck=(t.lib||t.dest)+"|"+(it.q||it.name);
    if(GEO[ck]&&ok(GEO[ck])){it.lat=GEO[ck][0];it.lng=GEO[ck][1];it.geoV=3;changed=true;continue}
-   let hit=null;for(const q of cands(it,t)){try{hit=await nomi(q,c,rd)}catch(e){}await sleep(1100);if(hit&&!ok(hit))hit=null;if(hit)break}
+   let hit=null;if(it.gmap&&/^https?:/i.test(it.gmap)){const r=await resolveLink(it.gmap);if(r){hit=[r.lat,r.lng];it.pinned=1}}
+   const wide=p=>!c||(Math.abs(p[0]-c[0])<=rd*3&&Math.abs(p[1]-c[1])<=rd*3);
+   if(!hit)for(const q of addrCands(it.q)){try{hit=await nomi(q,null)}catch(e){}await sleep(1100);if(hit&&!wide(hit))hit=null;if(!hit){try{hit=await photon(q,c,rd*3)}catch(e){}}if(hit)break}
+   if(!hit)for(const q of cands(it,t)){try{hit=await nomi(q,c,rd)}catch(e){}await sleep(1100);if(hit&&!ok(hit))hit=null;if(hit)break}
+   if(!hit)for(const q of cands(it,t).slice(0,2)){try{hit=await photon(q,c,rd)}catch(e){}if(hit)break}
    if(hit){it.lat=hit[0];it.lng=hit[1];GEO[ck]=hit;LS.set("geo3",GEO)}else it.geoFail=1;it.geoV=3;changed=true;
    if(T()===t&&dayIdx===di)drawMapLite()}}
  finally{geoBusy=false}
@@ -990,6 +1001,16 @@ function destHint(){const el=$("#dhint");if(!el)return;const d=$("#f_dest").valu
 
 const BKC=["#F2A497","#A8D3E6","#F6D27A","#B9DAA5","#d9c7ef","#f3c6a5"];
 const ACT={
+ fixGeo(a){const t=T(),di=+a.dataset.d,j=+a.dataset.j,it=t.days[di].items[j];
+  openSheet(`<h2 style="font-size:17px">${ic("i-pin")}${esc(it.name)} 在哪裡？</h2>
+  <div class="small" style="margin-bottom:8px">在 Google 地圖點這個地點：<br>・按地址旁的「複製」，或<br>・按「分享」→「複製連結」<br>貼到下面就好</div>
+  <textarea id="gf_in" style="min-height:80px" placeholder="例如：278-2 Shiraho, Ishigaki, Okinawa 907-0242 或 https://maps.app.goo.gl/…">${esc(it.gmap||it.q||"")}</textarea>
+  <div class="note2" id="gf_note" style="margin-top:6px"></div><div class="acts2"><button data-close>取消</button><button class="pri" id="gf_ok">定位</button></div>`);
+  $("#gf_ok").onclick=async()=>{const v=$("#gf_in").value.trim();if(!v)return;$("#gf_note").textContent="定位中…";const isUrl=/^https?:\/\//i.test(v);let pos=null;
+   if(isUrl){const r=await resolveLink(v);if(r)pos=[r.lat,r.lng]}
+   else{for(const q of addrCands(v)){try{pos=await nomi(q,null)}catch(e){}if(!pos)try{pos=await photon(q,centerOf(t),null)}catch(e){}if(pos)break;await sleep(1000)}}
+   mut(t=>{const x=t.days[di].items[j];if(isUrl)x.gmap=v;else x.q=v;delete x.geoFail;if(pos){x.lat=pos[0];x.lng=pos[1];x.pinned=1;x.geoV=3}else{delete x.lat;delete x.lng;delete x.geoV;delete x.pinned}});
+   closeSheet();toast(pos?"已定位":"還是找不到，換成 Google 分享連結試試")}},
  legMode(a){const t=T(),di=+a.dataset.d,j=+a.dataset.j,it=t.days[di].items[j],prev=t.days[di].items[j-1];
   openSheet(`<h2 style="font-size:17px">怎麼過去？</h2><div class="small" style="margin:-4px 0 10px">${esc(prev?.name||"")} → ${esc(it.name)}</div>
   <div class="fgrid" style="grid-template-columns:repeat(4,minmax(0,1fr))">${LEGPICK.map(([m,i])=>`<button class="ftile ${it.mode===m?"on":""}" data-pm="${m}">${ic(i)}<span>${m}</span></button>`).join("")}</div>
@@ -1062,7 +1083,7 @@ const ACT={
    {k:"move",label:"交通補充",ph:"例如：15 分、JR 鹿兒島本線"},{k:"note",label:"說明"},{k:"tip",label:"提醒",ph:"停留 1 小時、門票 ₩2,000"},
    {k:"flag",label:"標記",type:"select",opts:Object.keys(FLAGS).map(k=>[k,FLAGS[k]&&k?k:"（無）"]),half:1},{k:"d",label:"放在哪一天",type:"select",opts:t.days.map((d,k)=>[k,`Day ${k+1}`]),half:1},
    {k:"gmap",label:"Google 地圖連結（選填）",ph:"在 Google 地圖按分享 → 複製連結"},{k:"web",label:"網站或 IG 連結（選填）",ph:"https://… 或 @帳號"},{k:"q",label:"地圖搜尋字（定位不準時填）",ph:"留空就用地點名稱"},{k:"must",label:"標成「必去」",type:"check"}],
-   {...it,d:di},o=>{if(!o.name){toast("請填地點");return false}const nd=+o.d;delete o.d;const coord=parseCoord(o.gmap)||parseCoord(o.q);
+   {...it,d:di},o=>{if(!o.name){toast("請填地點");return false}const nd=+o.d;delete o.d;const coord=parseCoord(o.gmap)||parseCoord(o.q);if(!coord&&o.gmap&&o.gmap!==(it.gmap||""))setTimeout(async()=>{const r=await resolveLink(o.gmap);if(r){mut(t=>{const y=t.days.flatMap(d=>d.items).find(i=>i.gmap===o.gmap);if(y){y.lat=r.lat;y.lng=r.lng;y.pinned=1;y.geoV=3;delete y.geoFail}})}},300);
     mut(t=>{let x;if(j>=0){x=t.days[di].items[j];const qChanged=x.q!==o.q||x.name!==o.name||(x.gmap||"")!==(o.gmap||"");Object.assign(x,o);if(qChanged){delete x.lat;delete x.lng;delete x.geoFail;delete x.pinned;delete x.geoV}if(nd!==di){t.days[di].items.splice(j,1);t.days[nd].items.push(x)}}
      else{x={id:uid(),...o};t.days[nd].items.push(x)}
      if(coord){x.lat=coord[0];x.lng=coord[1];x.pinned=1;delete x.geoFail;if(/^https?:/.test(x.q))x.q=""}
