@@ -389,6 +389,8 @@ function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(
 const grp = id => S.groups.find(g => g.id === id);
 const itm = id => S.items.find(i => i.id === id);
 const bank = id => (S.banks || []).find(b => b.id === id);
+const isIns = it => it.kind === 'cash' && /保險|保單/.test(grp(it.group)?.name || '');
+function nextPay(it){ const p = it.dca; if (!p || !p.on) return ''; return planDates(p, p.last || addDays(today(), -1), addDays(today(), 400))[0] || ''; }
 function bankShort(b){
   if (b.short) return b.short;
   const map = {'中國信託':'中信','國泰世華':'國泰','台北富邦':'富邦','玉山銀行':'玉山','第一銀行':'一銀','華南銀行':'華南','兆豐銀行':'兆豐'};
@@ -617,8 +619,10 @@ async function runDCA(){
       const p = it.dca; if (!p || !p.on) continue;
       const dates = planDates(p, p.last || addDays(t, -1), t).slice(0, 36);
       for (const d of dates){
+        if (p.maxTimes && (p.done || 0) >= p.maxTimes){ p.on = false; break; }
         const res = await execDCA(it, d);
         if (!res) break;
+        if (p.maxTimes){ p.done = (p.done || 0) + 1; if (it.ins) it.ins.paid = p.done; }
         done.push(`${it.name} ${md(d)}`);
       }
     }
@@ -659,12 +663,14 @@ function undoRec(it, recId){
   else it.units = +(num(it.units) - num(r.units)).toFixed(6);
   if (r.deducted && it.dca?.from){ const acc = itm(it.dca.from); if (acc) acc.amount = +(num(acc.amount) + r.deducted).toFixed(2); }
   it.log.splice(i, 1);
+  if (it.dca?.maxTimes){ it.dca.done = Math.max(0, (it.dca.done || 0) - 1); it.dca.on = true; if (it.ins) it.ins.paid = it.dca.done; }
 }
 function upcoming(days=45){
   const t = today(), end = addDays(t, days), out = [];
   for (const it of S.items){
     const p = it.dca; if (!p || !p.on) continue;
-    planDates(p, p.last || addDays(t, -1), end).forEach(d => out.push({d, it}));
+    const left = p.maxTimes ? Math.max(0, p.maxTimes - (p.done || 0)) : 99;
+    planDates(p, p.last || addDays(t, -1), end).slice(0, left).forEach(d => out.push({d, it}));
   }
   return out.sort((a, b) => a.d.localeCompare(b.d));
 }
@@ -686,7 +692,7 @@ function itemRow(it, color, arrows='', showBank=true){
   const b = it.bank ? bank(it.bank) : null;
   return `<${sorting ? 'div' : 'button'} class="item" ${sorting ? '' : `data-item="${it.id}"`}>
     <span class="badge" style="--c:${color}">${b && it.kind === 'cash' ? esc(bankShort(b)) : badgeText(it)}</span>
-    <span class="it-main"><span class="it-name">${esc(it.name)}${it.dca?.on ? '<span class="dca-pill">定額</span>' : ''}${it.excluded ? '<span class="tag">不統計</span>' : ''}</span>
+    <span class="it-main"><span class="it-name">${esc(it.name)}${it.dca?.on ? `<span class="dca-pill">${it.ins ? '自動記' : '定額'}</span>` : ''}${it.excluded ? '<span class="tag">不統計</span>' : ''}</span>
     <span class="it-meta num">${itemMeta(it)}</span></span>
     <span class="it-right"><div class="it-val num">${money(v)}</div>
     ${pct !== null && Math.abs(pct) > 0.0001 ? `<div class="it-chg num ${signCls(ch)}"><span class="amt">${sgn(ch)}${fmt(Math.abs(ch))}</span> (${pct > 0 ? '+' : ''}${pct.toFixed(2)}%)</div>` : ''}</span>
@@ -809,6 +815,11 @@ function dueInfo(it){
 function itemMeta(it){
   const di = dueInfo(it);
   if (di && grp(it.group)?.cat === 'recv') return di.html + (it.note ? ` · ${esc(it.note)}` : '');
+  if (it.ins && isIns(it)){
+    const I = it.ins, n = nextPay(it);
+    const done = num(I.years) && num(I.paid) >= num(I.years);
+    return `年繳 ${I.ccy} ${fmt(num(I.premium))}・${num(I.years) ? `第 ${num(I.paid)}/${num(I.years)} 年` : ''}${done ? '・已繳費期滿' : n ? `・下次 ${md(n)}` : ''}`;
+  }
   if (it.kind === 'cash') return it.ccy !== 'TWD' ? `${it.ccy} ${fmt(num(it.amount), 2)} · r${fmtP(fx(it.ccy))}` : esc(it.note || '');
   const cur = it.ccy === 'TWD' ? '$' : it.ccy + ' ';
   return `持有 ${fmtU(num(it.units))} · ${cur}${fmtP(num(it.price))}${it.symbol ? '' : ' · 手動價格'}`;
@@ -920,7 +931,7 @@ function editItem(id, newGroup, preset){
       <div class="hint">${kind === 'fund' ? '基金淨值每天更新一次。填了 Yahoo 代號就會自動抓；沒填就用你手動輸入的淨值。' : kind === 'tw' ? '上市、上櫃都可以，自動判斷。開盤時間每 30 秒更新。' : kind === 'crypto' ? '幣安即時報價，24 小時更新。' : '美股開盤時間每分鐘更新，休市時顯示最後收盤價。'}</div>
       ` : `
       <div class="fld">
-        <div class="row"><label>金額</label><input type="number" inputmode="decimal" id="f_amount" value="${num(it.amount)}"></div>
+        <div class="row"><label>${isIns(it) ? '保單價值' : '金額'}</label><input type="number" inputmode="decimal" id="f_amount" value="${num(it.amount)}"></div>
         <div class="row"><label>幣別</label>${ccySel('f_ccy', it.ccy)}</div>
       </div>`}
       <div class="fld">
@@ -929,6 +940,18 @@ function editItem(id, newGroup, preset){
         <div class="row"><label>備註</label><textarea id="f_note" rows="1">${esc(it.note || '')}</textarea></div>
       </div>
 
+      ${isIns(it) ? (() => { const I = it.ins || {years:'', paid:0, premium:'', ccy:it.ccy || 'TWD', month:'', day:'', from:'', auto:true}; const n = nextPay(it); return `
+      <div class="sec-t">☂️ 保單繳費</div>
+      <div class="fld">
+        <div class="row"><label>繳費年期</label><input type="number" inputmode="numeric" id="i_years" value="${esc(I.years)}" placeholder="例：6"><span style="color:var(--sub)">年</span></div>
+        <div class="row"><label>已經繳了</label><input type="number" inputmode="numeric" id="i_paid" value="${num(I.paid)}" placeholder="0"><span style="color:var(--sub)">年</span></div>
+        <div class="row"><label>年繳保費</label><input type="number" inputmode="decimal" id="i_prem" value="${esc(I.premium)}" placeholder="例：2500"></div>
+        <div class="row"><label>保費幣別</label><div class="seg" id="i_ccy" style="padding:6px 0;margin-left:auto">${['TWD','USD'].map(c => `<button data-c="${c}" class="${(I.ccy || 'TWD') === c ? 'on' : ''}">${c === 'TWD' ? '台幣' : '美金'}</button>`).join('')}</div></div>
+        <div class="row"><label>每年扣款</label><input type="number" inputmode="numeric" id="i_month" value="${esc(I.month)}" placeholder="月" style="max-width:56px"> 月 <input type="number" inputmode="numeric" id="i_day" value="${esc(I.day)}" placeholder="日" style="max-width:56px"> 日</div>
+        <div class="row"><label>扣款帳戶</label><select id="i_from"><option value="">不扣款</option>${cashAccs.map(a => `<option value="${a.id}" ${a.id === I.from ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+        <div class="row"><label>自動記</label><span style="flex:1"></span>${sw('i_auto', I.auto !== false)}</div>
+      </div>
+      <div class="hint">${n ? `下次扣款：${n.replace(/-/g, '/')}・` : ''}每年到了扣款日，打開 App 會自動把年繳保費加進上面的金額、已繳年數 +1；有選扣款帳戶會同時扣掉那個帳戶的錢。繳滿年期就自動停止。</div>`; })() : `
       <div class="sec-t">⛏ 定期定額／自動記</div>
       <div class="fld">
         <div class="row"><label>啟用</label>${sw('d_on', p.on)}</div>
@@ -945,7 +968,7 @@ function editItem(id, newGroup, preset){
           ${nextDates ? `<div class="hint" style="margin:8px 0">接下來：${nextDates}</div>` : ''}
         </div>
       </div>
-      <div class="hint">到了扣款日，打開 App 就會自動：${priced ? '用當天價格換算單位數加進持有' : '把金額加進去（例如保費、存款）'}${priced ? '，有選扣款帳戶就同時扣掉現金' : ''}。錯過的日期也會補記，單位數可以在下面紀錄裡改成對帳單的實際數字。</div>
+      <div class="hint">到了扣款日，打開 App 就會自動：${priced ? '用當天價格換算單位數加進持有' : '把金額加進去（例如保費、存款）'}${priced ? '，有選扣款帳戶就同時扣掉現金' : ''}。錯過的日期也會補記，單位數可以在下面紀錄裡改成對帳單的實際數字。</div>`}
 
       ${(it.log || []).length ? `<div class="sec-t">入帳紀錄</div><div class="fld">${it.log.slice(0, 40).map(r => `
         <div class="log"><span class="ld">${r.date.slice(2).replace(/-/g, '/')}</span>
@@ -975,7 +998,17 @@ function editItem(id, newGroup, preset){
       it.symbol = sym; it.units = num($('#f_units').value); it.price = num($('#f_price').value);
       if (!it.prev) it.prev = it.price;
     }
-    const wasOn = !!it.dca?.on, oldStart = it.dca?.last;
+    if ($('#i_years')){
+      const I = {years:num($('#i_years').value), paid:num($('#i_paid').value), premium:num($('#i_prem').value),
+        ccy:$('#i_ccy .on')?.dataset.c || 'TWD', month:num($('#i_month').value), day:num($('#i_day').value), from:$('#i_from').value, auto:$('#i_auto').checked};
+      if (I.month && (I.month < 1 || I.month > 12)) { toast('月份要 1–12'); return false; }
+      if (I.day && (I.day < 1 || I.day > 31)) { toast('日期要 1–31'); return false; }
+      const old = it.dca || {}; const sameDate = old.month === I.month && old.day === I.day && old.maxTimes;
+      it.ins = I;
+      it.dca = {on: I.auto && I.premium > 0 && I.month > 0 && I.day > 0 && (!I.years || I.paid < I.years), amount:I.premium, ccy:I.ccy, freq:'yearly', month:I.month, day:I.day,
+        from:I.from, fee:0, skipWeekend:false, last: sameDate && old.last ? old.last : today(), maxTimes: I.years || 999, done: I.paid};
+      return true;
+    }
     p.on = $('#d_on').checked;
     if ($('#d_amt')){
       p.amount = num($('#d_amt').value); p.ccy = $('#d_ccy').value; p.fee = num($('#d_fee').value); p.from = $('#d_from').value;
@@ -995,9 +1028,10 @@ function editItem(id, newGroup, preset){
     $('#sheet [data-close]').onclick = closeSheet;
     $('#f_kind').onclick = e => { const b = e.target.closest('button'); if (!b) return; snapshot(); kind = b.dataset.k; if (kind === 'crypto' || kind === 'us') it.ccy = 'USD'; draw(); };
     $('#f_bank').onchange = e => { $('#f_nb_row').style.display = e.target.value === '__new' ? '' : 'none'; if (e.target.value === '__new') $('#f_nb').focus(); };
-    $('#f_group').onchange = e => { $('#f_due_row').style.display = grp(e.target.value)?.cat === 'recv' ? '' : 'none'; };
-    $('#d_on').onchange = e => { $('#d_box').style.display = e.target.checked ? '' : 'none'; };
-    $('#d_freq').onclick = e => { const b = e.target.closest('button'); if (!b) return; p.freq = b.dataset.f; [...$('#d_freq').children].forEach(x => x.classList.toggle('on', x === b)); $('#d_days_row').style.display = p.freq === 'yearly' ? 'none' : ''; $('#d_year_row').style.display = p.freq === 'yearly' ? '' : 'none'; };
+    $('#f_group').onchange = e => { const was = isIns(it); snapshot(); it.group = e.target.value; if (isIns(it) !== was) return draw(); $('#f_due_row').style.display = grp(e.target.value)?.cat === 'recv' ? '' : 'none'; };
+    if ($('#i_ccy')) $('#i_ccy').onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$('#i_ccy').children].forEach(x => x.classList.toggle('on', x === b)); };
+    if ($('#d_on')) $('#d_on').onchange = e => { $('#d_box').style.display = e.target.checked ? '' : 'none'; };
+    if ($('#d_freq')) $('#d_freq').onclick = e => { const b = e.target.closest('button'); if (!b) return; p.freq = b.dataset.f; [...$('#d_freq').children].forEach(x => x.classList.toggle('on', x === b)); $('#d_days_row').style.display = p.freq === 'yearly' ? 'none' : ''; $('#d_year_row').style.display = p.freq === 'yearly' ? '' : 'none'; };
     if ($('#f_search')) $('#f_search').onclick = async () => {
       const q = $('#f_q').value.trim() || $('#f_name').value.trim(); if (!q) return;
       $('#f_res').innerHTML = '<div class="hint">搜尋中…</div>';
