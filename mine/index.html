@@ -501,11 +501,22 @@ async function fetchTW(list){
   for (const it of list){ const g = got[it.symbol.trim()]; if (g){ it.price = g.price; it.prev = g.prev; it.market = g.market || it.market; it.pts = Date.now(); n++; } }
   return n;
 }
+const isISIN = v => /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(String(v || '').trim().toUpperCase());
+async function yfSymbol(it){
+  const raw = (it.symbol || '').trim();
+  if (!isISIN(raw)) return raw;
+  if (it.yfSym && it.yfIsin === raw.toUpperCase()) return it.yfSym;
+  const r = await yahooSearch(raw.toUpperCase());
+  const hit = r.find(x => /fund/i.test(x.type)) || r[0];
+  if (!hit) throw new Error('ISIN not found');
+  it.yfSym = hit.symbol; it.yfIsin = raw.toUpperCase();
+  return hit.symbol;
+}
 async function fetchYahooList(list){
   let n = 0;
   await Promise.all(list.map(async it => {
     try {
-      const q = await yahooQuote(it.symbol.trim());
+      const q = await yahooQuote(await yfSymbol(it));
       it.price = q.price; it.prev = q.prev; it.pts = Date.now();
       if (q.ccy && CCYS.includes(q.ccy.toUpperCase())) it.ccy = q.ccy.toUpperCase();
       n++;
@@ -609,7 +620,7 @@ async function priceOn(it, date){
   try {
     if (it.kind === 'crypto') return await cryptoHistClose(it.symbol.trim().toUpperCase(), date);
     if (it.kind === 'tw') return await yahooHistClose(twYahooSym(it), date);
-    if ((it.kind === 'us' || it.kind === 'fund') && it.symbol) return await yahooHistClose(it.symbol.trim(), date);
+    if ((it.kind === 'us' || it.kind === 'fund') && it.symbol) return await yahooHistClose(await yfSymbol(it), date);
   } catch(e){}
   return num(it.price);
 }
@@ -912,8 +923,8 @@ function editItem(id, newGroup, preset){
 
   const draw = () => {
     const priced = kind !== 'cash';
-    const symLabel = {tw:'股票代號', us:'美股代號', fund:'Yahoo 代號', crypto:'幣種代號'}[kind] || '';
-    const symPh = {tw:'例：2330、00919', us:'例：SPY、NVDA', fund:'可按搜尋找代號', crypto:'例：BTC、ETH'}[kind] || '';
+    const symLabel = {tw:'股票代號', us:'美股代號', fund:'基金代號', crypto:'幣種代號'}[kind] || '';
+    const symPh = {tw:'例：2330、00919', us:'例：SPY、NVDA', fund:'ISIN，如 TW000T3201Y8', crypto:'例：BTC、ETH'}[kind] || '';
     const nextDates = p.on ? planDates(p, p.last || addDays(today(), -1), addDays(today(), 400)).slice(0, 3).map(md).join('、') : '';
     openSheet(`${topBar(isNew ? '新增' : '編輯', '')}
       <div class="fld">
@@ -931,7 +942,7 @@ function editItem(id, newGroup, preset){
         <div class="row"><label>目前價格</label><input type="number" inputmode="decimal" id="f_price" value="${num(it.price)}"></div>
         <div class="row"><label>計價幣別</label>${ccySel('f_ccy', it.ccy)}</div>
       </div>
-      <div class="hint">${kind === 'fund' ? '基金淨值每天更新一次。填了 Yahoo 代號就會自動抓；沒填就用你手動輸入的淨值。' : kind === 'tw' ? '上市、上櫃都可以，自動判斷。開盤時間每 30 秒更新。' : kind === 'crypto' ? '幣安即時報價，24 小時更新。' : '美股開盤時間每分鐘更新，休市時顯示最後收盤價。'}</div>
+      <div class="hint">${kind === 'fund' ? '基金代號直接填 ISIN 國際代碼就好（對帳單或基金頁上 TW 或 LU 開頭那串），淨值每天自動更新一次；沒填就用你手動輸入的淨值。按「搜尋」可以先確認是不是同一檔、淨值對不對。' : kind === 'tw' ? '上市、上櫃都可以，自動判斷。開盤時間每 30 秒更新。' : kind === 'crypto' ? '幣安即時報價，24 小時更新。' : '美股開盤時間每分鐘更新，休市時顯示最後收盤價。'}</div>
       ` : `
       <div class="fld">
         <div class="row"><label>${isIns(it) ? '保單價值' : '金額'}</label><input type="number" inputmode="decimal" id="f_amount" value="${num(it.amount)}"></div>
@@ -997,7 +1008,7 @@ function editItem(id, newGroup, preset){
     if (kind === 'cash'){ it.amount = num($('#f_amount').value); }
     else {
       let sym = $('#f_sym').value.trim(); if (kind === 'tw' || kind === 'crypto') sym = sym.toUpperCase();
-      if (sym !== it.symbol) { it.market = undefined; it.prev = 0; }
+      if (sym !== it.symbol) { it.market = undefined; it.prev = 0; it.yfSym = undefined; it.yfIsin = undefined; }
       it.symbol = sym; it.units = num($('#f_units').value); it.price = num($('#f_price').value);
       if (!it.prev) it.prev = it.price;
     }
@@ -1036,12 +1047,13 @@ function editItem(id, newGroup, preset){
     if ($('#d_on')) $('#d_on').onchange = e => { $('#d_box').style.display = e.target.checked ? '' : 'none'; };
     if ($('#d_freq')) $('#d_freq').onclick = e => { const b = e.target.closest('button'); if (!b) return; p.freq = b.dataset.f; [...$('#d_freq').children].forEach(x => x.classList.toggle('on', x === b)); $('#d_days_row').style.display = p.freq === 'yearly' ? 'none' : ''; $('#d_year_row').style.display = p.freq === 'yearly' ? '' : 'none'; };
     if ($('#f_search')) $('#f_search').onclick = async () => {
-      const q = $('#f_q').value.trim() || $('#f_name').value.trim(); if (!q) return;
+      const sv = ($('#f_sym')?.value || '').trim();
+      const q = $('#f_q').value.trim() || (isISIN(sv) ? sv.toUpperCase() : '') || $('#f_name').value.trim(); if (!q) return;
       $('#f_res').innerHTML = '<div class="hint">搜尋中…</div>';
       try {
         const r = await yahooSearch(q);
         $('#f_res').innerHTML = r.length ? r.map(x => `<button data-pick="${esc(x.symbol)}"><b>${esc(x.symbol)}</b> · ${esc(x.name)} <span style="color:var(--sub)">${esc(x.type)} ${esc(x.exch)}</span></button>`).join('') : '<div class="hint">找不到，換個關鍵字（基金多半要用英文名）。</div>';
-      } catch(e){ $('#f_res').innerHTML = '<div class="hint">搜尋失敗：要部署到 Netlify 後才連得到 Yahoo。</div>'; }
+      } catch(e){ $('#f_res').innerHTML = '<div class="hint">搜尋失敗，請檢查網路後再試一次。</div>'; }
     };
     if ($('#f_res')) $('#f_res').onclick = async e => {
       const b = e.target.closest('[data-pick]'); if (!b) return;
