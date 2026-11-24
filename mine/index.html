@@ -91,7 +91,10 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .grp-head .gv{margin-left:auto;font-weight:600;color:var(--ink)}
 .mini{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#F2EADB;color:var(--sub);flex:none}
 .tag{font-size:10px;padding:1px 6px;border-radius:8px;background:#EDE3F0;background:#EEE5D8;color:var(--sub)}
-.item{display:flex;align-items:center;gap:12px;padding:11px 18px;width:100%;text-align:left}
+.item{display:flex;align-items:center;gap:12px;padding:11px 18px;width:100%;text-align:left;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.item.lifted{position:relative;z-index:30;background:var(--card);border-radius:16px;box-shadow:0 14px 30px -8px rgba(90,60,20,.35);transform-origin:center;transition:box-shadow .15s,scale .15s;scale:1.03}
+body.dragging{overflow:hidden;touch-action:none}
+body.dragging .item:not(.lifted){transition:transform .15s}
 .item:active{background:#FBF5EA}
 .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--c);flex:none;font-family:Outfit,sans-serif}
 .it-main{min-width:0;flex:1}
@@ -868,7 +871,7 @@ function render(){
         }
         return itemRow(it, c.color, sorting ? mvBtns('i', it.id, ii === 0, ii === its.length - 1) : '', c.id === 'cash');
       }).join('');
-      return `<div class="grp ${!single && (S.gclosed || {})[g.id] ? 'gclosed' : ''}">${head}${rows}<div class="add-row"><button class="ghost" data-additem="${g.id}">＋ 新增到「${esc(g.name)}」</button></div></div>`;
+      return `<div class="grp ${!single && (S.gclosed || {})[g.id] ? 'gclosed' : ''}" data-gid="${g.id}">${head}${rows}<div class="add-row"><button class="ghost" data-additem="${g.id}">＋ 新增到「${esc(g.name)}」</button></div></div>`;
     }).join('');
     return `<div class="card ${S.closed[c.id] ? 'closed' : ''}" data-cat="${c.id}">
       <button class="cat-head" data-toggle="${c.id}"><span class="cat-bar" style="--c:${c.color}"></span>
@@ -1168,6 +1171,72 @@ $('#fileIn').onchange = async e => {
 };
 
 /* ================= events ================= */
+/* ================= long-press drag to reorder ================= */
+(function(){
+  let timer = null, drag = null, startX = 0, startY = 0, suppressClick = false, scrollTimer = null, lastClientY = 0;
+  const rowsOf = grpEl => [...grpEl.querySelectorAll(':scope > .item')].filter(r => r.dataset.item || r.dataset.bankopen);
+  function begin(row){
+    const grpEl = row.closest('.grp[data-gid]'); if (!grpEl) return;
+    drag = {row, grpEl, baseY: lastClientY + window.scrollY};
+    row.classList.add('lifted'); document.body.classList.add('dragging');
+    try { navigator.vibrate && navigator.vibrate(15); } catch(e){}
+    scrollTimer = setInterval(() => {
+      if (!drag) return;
+      const edge = 90, h = window.innerHeight;
+      if (lastClientY < edge) window.scrollBy(0, -10); else if (lastClientY > h - edge - 80) window.scrollBy(0, 10);
+      move(lastClientY);
+    }, 16);
+  }
+  function move(clientY){
+    if (!drag) return;
+    const {row} = drag;
+    let dy = clientY + window.scrollY - drag.baseY;
+    const rows = rowsOf(drag.grpEl), i = rows.indexOf(row);
+    const next = rows[i + 1], prev = rows[i - 1];
+    if (next && dy > next.offsetHeight / 2){ next.after(row); drag.baseY += next.offsetHeight; dy -= next.offsetHeight; }
+    else if (prev && dy < -prev.offsetHeight / 2){ prev.before(row); drag.baseY -= prev.offsetHeight; dy += prev.offsetHeight; }
+    row.style.transform = `translateY(${dy}px)`;
+  }
+  function finish(){
+    clearTimeout(timer); timer = null;
+    if (!drag) return;
+    clearInterval(scrollTimer);
+    const {row, grpEl} = drag; drag = null;
+    row.classList.remove('lifted'); row.style.transform = ''; document.body.classList.remove('dragging');
+    suppressClick = true; setTimeout(() => suppressClick = false, 350);
+    const gid = grpEl.dataset.gid;
+    const ids = [];
+    rowsOf(grpEl).forEach(r => {
+      if (r.dataset.item) ids.push(r.dataset.item);
+      else S.items.filter(x => x.group === gid && x.bank === r.dataset.bankopen).forEach(x => ids.push(x.id));
+    });
+    S.items.filter(x => x.group === gid && !ids.includes(x.id)).forEach(x => ids.push(x.id));
+    const first = S.items.findIndex(x => x.group === gid);
+    const before = S.items.slice(0, first).filter(x => x.group !== gid), after = S.items.slice(first).filter(x => x.group !== gid);
+    S.items = [...before, ...ids.map(itm).filter(Boolean), ...after];
+    save(); render(); toast('順序已儲存');
+  }
+  const startOn = (target, x, y) => {
+    if (sorting) return;
+    const row = target.closest('.grp[data-gid] > .item'); if (!row || !(row.dataset.item || row.dataset.bankopen)) return;
+    startX = x; startY = y; lastClientY = y;
+    clearTimeout(timer); timer = setTimeout(() => { timer = null; begin(row); }, 420);
+  };
+  document.addEventListener('touchstart', e => { if (e.touches.length === 1) startOn(e.target, e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    const t = e.touches[0]; lastClientY = t.clientY;
+    if (drag){ e.preventDefault(); move(t.clientY); return; }
+    if (timer && (Math.abs(t.clientX - startX) > 8 || Math.abs(t.clientY - startY) > 8)){ clearTimeout(timer); timer = null; }
+  }, {passive:false});
+  document.addEventListener('touchend', finish); document.addEventListener('touchcancel', finish);
+  // mouse (computer) support
+  document.addEventListener('mousedown', e => { if (e.button === 0) startOn(e.target, e.clientX, e.clientY); });
+  document.addEventListener('mousemove', e => { lastClientY = e.clientY; if (drag){ e.preventDefault(); move(e.clientY); } else if (timer && (Math.abs(e.clientX - startX) > 6 || Math.abs(e.clientY - startY) > 6)){ clearTimeout(timer); timer = null; } });
+  document.addEventListener('mouseup', finish);
+  document.addEventListener('contextmenu', e => { if (drag || timer) e.preventDefault(); });
+  document.addEventListener('click', e => { if (suppressClick){ e.stopPropagation(); e.preventDefault(); } }, true);
+})();
+
 document.addEventListener('click', e => {
   const mv = e.target.closest('[data-mv]');
   if (mv){ e.stopPropagation(); const [type, id, d] = mv.dataset.mv.split(':');
