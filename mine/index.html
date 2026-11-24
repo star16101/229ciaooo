@@ -386,6 +386,14 @@ function migrate(){
     S.items.forEach(i => { if (i.bank === 'b_binance' || i.bank === 'b_maicoin') i.bank = ''; });
     S.m4 = 1;
   }
+  if (!S.m5){
+    S.items.forEach(i => {
+      if (i.kind !== 'fund' || (i.symbol || '').trim()) return;
+      if (/野村/.test(i.name)) { i.symbol = 'TW000T3201Y8'; i.prev = 0; }
+      else if (/安聯收益成長/.test(i.name)) { i.symbol = '0P0000X7WR'; i.ccy = 'USD'; i.prev = 0; }
+    });
+    S.m5 = 1;
+  }
   if (!S.m1){ S.items.forEach(i => { if (i.group === 'g_liu' && !i.due && /^11\/30/.test(i.name)) i.due = '2026-11-30'; }); S.m1 = 1; }
 }
 function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {} }
