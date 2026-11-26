@@ -403,6 +403,15 @@ function migrate(){
     });
     S.m6 = 1;
   }
+  if (!S.m7){
+    if (!S.groups.some(g => g.id === 'g_recv_bare')){
+      const at = S.groups.findIndex(g => g.cat === 'recv');
+      const bareG = {id:'g_recv_bare', cat:'recv', name:'應收款', bare:true, excluded:false};
+      if (at >= 0) S.groups.splice(at, 0, bareG); else S.groups.push(bareG);
+    }
+    S.items.forEach(i => { if (i.group === 'g_owe' && !/麻將館|飲料店/.test(i.name)) i.group = 'g_recv_bare'; });
+    S.m7 = 1;
+  }
   if (!S.m1){ S.items.forEach(i => { if (i.group === 'g_liu' && !i.due && /^11\/30/.test(i.name)) i.due = '2026-11-30'; }); S.m1 = 1; }
 }
 function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {} }
@@ -880,16 +889,17 @@ function render(){
   // view
   $('#cats').innerHTML = CATS.map(c => {
     const groups = S.groups.filter(g => g.cat === c.id);
-    const names = groups.map(g => g.name).join('、');
+    const names = groups.filter(g => !g.bare).map(g => g.name).join('、') || c.name;
     const single = groups.length === 1 && groups[0].name === c.name;
     const body = groups.map((g, gi) => {
       const its = S.items.filter(i => i.group === g.id);
       const gv = its.filter(counted).reduce((a, i) => a + valueOf(i), 0);
       const gAll = its.reduce((a, i) => a + valueOf(i), 0);
       const gChg = its.filter(counted).reduce((a, i) => a + dayChg(i), 0);
-      const head = single ? '' : `<div class="grp-head" data-gtoggle="${g.id}"><svg class="gchev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg><b>${esc(g.name)}</b><span style="font-size:12px">${its.length} 筆</span>${g.excluded ? '<span class="tag">不統計</span>' : ''}
+      const bare = single || g.bare;
+      const head = bare ? '' : `<div class="grp-head" data-gtoggle="${g.id}"><svg class="gchev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 9l6 6 6-6"/></svg><b>${esc(g.name)}</b><span style="font-size:12px">${its.length} 筆</span>${g.excluded ? '<span class="tag">不統計</span>' : ''}
         ${gChg ? `<span class="${signCls(gChg)} amt num" style="font-size:12px">${sgn(gChg)}${fmt(Math.abs(gChg))}</span>` : ''}
-        <span class="gv num">${money(g.excluded ? gAll : gv)}</span>
+        <span class="gv num">${money(g.excluded || (!gv && gAll) ? gAll : gv)}</span>
         ${sorting ? mvBtns('g', g.id, gi === 0, gi === groups.length - 1) : ''}<button class="mini" data-gedit="${g.id}" aria-label="群組設定"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>`;
       const seenB = new Set();
       const rows = its.map((it, ii) => {
@@ -899,7 +909,7 @@ function render(){
         }
         return itemRow(it, c.color, sorting ? mvBtns('i', it.id, ii === 0, ii === its.length - 1) : '', c.id === 'cash');
       }).join('');
-      return `<div class="grp ${!single && (S.gclosed || {})[g.id] ? 'gclosed' : ''}" data-gid="${g.id}">${head}${rows}<div class="add-row"><button class="ghost" data-additem="${g.id}">＋ 新增到「${esc(g.name)}」</button></div></div>`;
+      return `<div class="grp ${!bare && (S.gclosed || {})[g.id] ? 'gclosed' : ''}" data-gid="${g.id}" ${g.bare && !its.length ? 'style="border-top:0"' : ''}>${head}${rows}<div class="add-row"><button class="ghost" data-additem="${g.id}">＋ 新增到「${esc(g.bare ? c.name : g.name)}」</button></div></div>`;
     }).join('');
     return `<div class="card ${S.closed[c.id] ? 'closed' : ''}" data-cat="${c.id}">
       <button class="cat-head" data-toggle="${c.id}"><span class="cat-bar" style="--c:${c.color}"></span>
@@ -946,7 +956,7 @@ function editItem(id, newGroup, preset){
     openSheet(`${topBar(isNew ? '新增' : '編輯', '')}
       <div class="fld">
         <div class="row"><label>名稱</label><input type="text" id="f_name" value="${esc(it.name)}" placeholder="例：台新 Richart"></div>
-        <div class="row"><label>群組</label><select id="f_group">${CATS.map(c => `<optgroup label="${c.name}">${S.groups.filter(g => g.cat === c.id).map(g => `<option value="${g.id}" ${g.id === it.group ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+        <div class="row"><label>群組</label><select id="f_group">${CATS.map(c => `<optgroup label="${c.name}">${S.groups.filter(g => g.cat === c.id).map(g => `<option value="${g.id}" ${g.id === it.group ? 'selected' : ''}>${g.bare ? `${esc(c.name)}（不分群組）` : esc(g.name)}</option>`).join('')}</optgroup>`).join('')}</select></div>
         <div class="row"><label>銀行／機構</label><select id="f_bank"><option value="">未指定</option>${(S.banks || []).map(b => `<option value="${b.id}" ${b.id === it.bank ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}<option value="__new">＋ 新增銀行…</option></select></div>
         <div class="row" id="f_nb_row" style="display:none"><label>新銀行名稱</label><input type="text" id="f_nb" placeholder="例：國泰世華"></div>
         <div class="seg" id="f_kind">${Object.entries(KINDS).map(([k, l]) => `<button data-k="${k}" class="${k === kind ? 'on' : ''}">${l}</button>`).join('')}</div>
